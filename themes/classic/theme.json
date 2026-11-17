@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "id": "classic",
+  "name": "Classic",
+  "fallback": null,
+  "assets": {
+    "tile": "tile.svg",
+    "rack": "rack.svg",
+    "tw": "tw.svg",
+    "dw": "dw.svg",
+    "tl": "tl.svg",
+    "dl": "dl.svg",
+    "st": "st.svg"
+  },
+  "modes": {
+    "light": {
+      "palette": {
+        "page": "#FAF9F6",
+        "panel": "#FFFFFF",
+        "text": "#292015",
+        "muted": "#655B50",
+        "plain": "#F8F0DF",
+        "grid": "#D8CBB0",
+        "tw": "#E54C51",
+        "dw": "#F17E9C",
+        "tl": "#2675D9",
+        "dl": "#82BDEA",
+        "st": "#F17E9C",
+        "accent": "#F6B93F",
+        "icon": "#292015",
+        "tileInk": "#292015",
+        "premiumInk": {
+          "tw": "#FFFFFF",
+          "dw": "#59213A",
+          "tl": "#FFFFFF",
+          "dl": "#17395A",
+          "st": "#59213A"
+        }
+      }
+    },
+    "dark": {
+      "palette": {
+        "page": "#181C23",
+        "panel": "#252C35",
+        "text": "#F1ECE3",
+        "muted": "#C2C5C9",
+        "plain": "#343B45",
+        "grid": "#505966",
+        "tw": "#B8313D",
+        "dw": "#96365F",
+        "tl": "#245FAF",
+        "dl": "#315D80",
+        "st": "#96365F",
+        "accent": "#F6B93F",
+        "icon": "#F1ECE3",
+        "tileInk": "#292015",
+        "premiumInk": {
+          "tw": "#FFFFFF",
+          "dw": "#FFFFFF",
+          "tl": "#FFFFFF",
+          "dl": "#FFFFFF",
+          "st": "#FFFFFF"
+        }
+      }
+    }
+  },
+  "layout": {
+    "rackSlice": [
+      20,
+      45,
+      20,
+      45
+    ],
+    "centerScale": 1,
+    "centerLayer": "below-tiles",
+    "premiumIconScale": 0.82
+  },
+  "effects": {
+    "boardArtOpacity": 0,
+    "surfaceOpacity": 0,
+    "wallpaperOpacity": 0
+  }
+}
