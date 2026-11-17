@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "id": "space",
+  "name": "Space",
+  "fallback": "classic",
+  "note": "Colour-only test theme. It borrows the Classic tile, rack and square icons until real artwork is made.",
+  "assets": {},
+  "modes": {
+    "light": {
+      "palette": {
+        "page": "#ECEEFA",
+        "panel": "#FFFFFF",
+        "text": "#1B1F3B",
+        "muted": "#5B6080",
+        "plain": "#E9EAF6",
+        "grid": "#C3C6E0",
+        "tw": "#D8454F",
+        "dw": "#EC86B0",
+        "tl": "#3B55D0",
+        "dl": "#8FB4F0",
+        "st": "#EC86B0",
+        "accent": "#F4C04A",
+        "icon": "#1B1F3B",
+        "tileInk": "#292015"
+      }
+    },
+    "dark": {
+      "palette": {
+        "page": "#070A1C",
+        "panel": "#131836",
+        "text": "#EEF0FF",
+        "muted": "#A3A9CF",
+        "plain": "#1A2046",
+        "grid": "#2E3670",
+        "tw": "#C9414C",
+        "dw": "#B04E86",
+        "tl": "#4560DA",
+        "dl": "#3F6FB8",
+        "st": "#B04E86",
+        "accent": "#F4C04A",
+        "icon": "#EEF0FF",
+        "tileInk": "#292015",
+        "premiumInk": {
+          "tw": "#FFFFFF",
+          "dw": "#FFFFFF",
+          "tl": "#FFFFFF",
+          "dl": "#FFFFFF",
+          "st": "#FFFFFF"
+        }
+      }
+    }
+  }
+}

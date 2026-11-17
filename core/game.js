@@ -5,6 +5,12 @@
   const N = C.board.length, BUILD = C.build || 1, KEY = 'wg_' + C.id, HK = KEY + '_hist', GAP = 4, COLS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   C.luck = Object.assign({ pairs: 0, pairChance: 10, vmin: 3, vmax: 4, vowelPct: 44, tierW: [1, 1, 1, 1], maxHigh: 8 }, C.luck || {});
   C.tiers = C.tiers || { R: 1, S: 1, T: 1, N: 1, E: 1, A: 1, D: 2, G: 2, I: 2, L: 2, O: 2, U: 2, C: 2, M: 2, H: 2, B: 3, F: 3, P: 3, W: 3, Y: 3, K: 3, V: 3, J: 4, X: 4, Q: 4, Z: 4 };
+  C.dev = Object.assign({ confirmRestart: false, noSBlank: false }, C.dev || {});
+  C._orig = JSON.parse(JSON.stringify({ bag: C.bag, values: C.values, bingo: C.bingo, luck: C.luck, tiers: C.tiers, dev: C.dev }));
+  try {
+    const o = JSON.parse(localStorage.getItem(KEY + '_dev'));
+    if (o) { C._devOn = true; ['bag', 'values', 'tiers'].forEach(k => { if (o[k]) C[k] = o[k]; }); if (o.bingo != null) C.bingo = o.bingo; if (o.luck) C.luck = Object.assign({}, C.luck, o.luck); if (o.dev) Object.assign(C.dev, o.dev); }
+  } catch (e) {}
   const ART = BASE + 'art/', ic = n => '<i class="ic" style="--m:url(' + ART + 'ic-' + n + '.svg)"></i>';
 
   // ---------- page ----------
@@ -17,7 +23,9 @@
     '<div id="bw"><canvas id="cv"></canvas><button id="bFit" aria-label="Show the whole board">' + ic('zoomout') + '</button></div>' +
     '<div id="status" role="status" aria-live="polite"></div>' +
     '<div class="tbox plain" id="rackBox"><div class="tray" id="rack"></div></div>' +
-    '<div class="tbox" id="scrBox"><div class="sh"><b>Scratch row</b><span id="sfb"></span><button id="scClr">Clear</button></div><div class="tray" id="scr"></div></div>' +
+    '<div class="tbox" id="scrBox"><div class="sh"><b>Scratch row</b><span class="sp"></span>' +
+      '<button id="bDir" aria-label="Word direction"><i class="ic" id="dA" style="--m:url(' + ART + 'ic-across.svg)"></i><i class="ic" id="dD" style="--m:url(' + ART + 'ic-down.svg)"></i></button>' +
+      '<button id="scPaste">Paste</button><button id="scClr">Clear</button></div><div class="tray" id="scr"></div><div id="sfb"></div></div>' +
     '<div class="row"><button id="bPlay">' + ic('play') + '<span id="bPlayT">Play</span></button><button id="bRecall">' + ic('recall') + 'Recall</button><button id="bShuffle">' + ic('shuffle') + 'Shuffle</button>' +
       '<button id="bSwap">' + ic('swap') + 'Swap</button><button id="bPass">' + ic('pass') + 'Pass</button><button id="bMenu">' + ic('menu') + 'Menu</button></div></div>' +
     '<div class="ov" id="pick"><div class="box"><div>Blank tile: choose a letter</div><div id="letters"></div><button id="pickCancel">Cancel</button></div></div>' +
@@ -25,11 +33,16 @@
     '<div class="ov" id="end"><div class="box"><b>Game over</b><div id="endTxt"></div><button id="endNew">New game</button><button id="endClose">Close</button></div></div>' +
     '<div class="ov" id="bagv"><div class="box"><b>Unseen tiles</b><small id="bagInfo"></small><div id="bagGrid"></div><button id="bagClose">Close</button></div></div>' +
     '<div class="ov" id="menu"><div class="box"><button id="mSet">' + ic('settings') + 'Settings</button><button id="mStats">' + ic('stats') + 'Scores and history</button>' +
+      '<button id="mSimPause" class="simb">Pause simulation</button><button id="mSimStop" class="simb">Stop simulation</button>' +
       '<button id="mNew">Cancel game and restart</button><button id="mClose">Close</button><small>' + C.name + ' build ' + BUILD + '</small></div></div>' +
+    '<div class="ov" id="paste"><div class="box"><div>Type or paste the letters</div><input id="pasteIn" type="text" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" maxlength="15">' +
+      '<button id="pasteOk">Put in the scratch row</button><button id="pasteCancel">Cancel</button></div></div>' +
     '<div class="ov" id="stats"><div class="box"><b>Scores and history</b><div id="statBody"></div><button id="statClear">Clear history</button><button id="statClose">Close</button></div></div>' +
     '<div class="ov" id="set"><div class="box">' +
       '<h4>Look</h4><label>Theme<select id="sTheme"></select></label>' +
       '<label>Light or dark<select id="sMode"><option value="system">Same as the phone</option><option value="light">Light</option><option value="dark">Dark</option></select></label>' +
+      '<label>Letter size on the tiles<select id="sLsz"><option value="0">Normal</option><option value="1">Large</option><option value="2">Extra large</option></select></label>' +
+      '<label>Points size on the tiles<select id="sPsz"><option value="0">Normal</option><option value="1">Large</option><option value="2">Extra large</option></select></label>' +
       '<h4>Game</h4><label>Who plays first<select id="sFirst"><option value="random">Random</option><option value="me">Me</option><option value="computer">Computer</option><option value="alternate">Take turns each game</option></select></label>' +
       '<label>Computer level<select id="sLevel"><option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option></select></label>' +
       '<label class="ck"><input type="checkbox" id="sRare"> Computer avoids rare and obscene words</label>' +
@@ -48,10 +61,10 @@
 
   // ---------- state ----------
   let S = { theme: 'classic', mode: 'system', level: 'hard', first: 'random', lastFirst: 'computer', noRare: true, hBal: true, hDup: true, hHard: true, showBag: true,
-            scratch: true, lift: 48, gs: 125, zoom: 160, hap: true };
-  let G = null, placed = [], sel = null, P = null, D = null, cur = null, bubs = [], hov = null, pickT = null, msg = '', busy = true, HL = null, saveT = 0;
+            scratch: true, lift: 48, gs: 125, zoom: 160, hap: true, dir: 'h', lsz: 0, psz: 0 };
+  let G = null, placed = [], sel = null, P = null, D = null, cur = null, bubs = [], hov = null, pickT = null, msg = '', busy = true, HL = null, saveT = 0, SIM = null, lastTT = { t: null, at: 0 }, pickAt = 0;
   const rack = { el: $('rack'), box: $('rackBox'), items: [], n: C.rackSize, sw: 0, off: 0, name: 'rack' };
-  const scr  = { el: $('scr'),  box: $('scrBox'),  items: [], n: C.rackSize + 1, sw: 0, off: 0, name: 'scratch row' };
+  const scr  = { el: $('scr'),  box: $('scrBox'),  items: [], n: C.rackSize, sw: 0, off: 0, name: 'scratch row' };
   const cv = $('cv'), ctx = cv.getContext('2d');
   let W = 300, dpr = 1, fit = 20, view = { s: 20, x: 0, y: 0 }, dirty = true, tween = null, rafId = 0, lastTs = 0, zoomT = 0;
 
@@ -72,7 +85,7 @@
 
   // ---------- saving ----------
   function save() {
-    if (!G) return;
+    if (!G || SIM) return;
     try {
       const pk = t => t ? { ch: t.ch, as: t.as || '' } : null;
       localStorage.setItem(KEY, JSON.stringify({ S, G: Object.assign({}, G, { rack: rack.items.map(pk), scr: scr.items.map(pk), placed: placed.map(t => ({ ch: t.ch, as: t.as || '', r: t.r, c: t.c })) }) }));
@@ -87,7 +100,7 @@
     G = { board: g.board, bag: g.bag, crack: g.crack, scores: g.scores, turn: g.turn, first: g.first, passes: g.passes, over: g.over, last: g.last || [], lastWho: g.lastWho == null ? -1 : g.lastWho,
           st: g.st || { bingos: [0, 0], best: [['', 0], ['', 0]] } };
     g.rack.forEach((x, i) => { if (x) intoTray(rack, makeTile(x.ch), i); });
-    (g.scr || []).forEach((x, i) => { if (x && i < scr.n) intoTray(scr, makeTile(x.ch), i); });
+    (g.scr || []).forEach((x, i) => { if (x) { const t = makeTile(x.ch); if (i < scr.n) intoTray(scr, t, i); else home(t); } });
     (g.placed || []).forEach(x => { const t = makeTile(x.ch); t.as = x.as || ''; updTile(t); t.where = 'board'; t.r = x.r; t.c = x.c; placed.push(t); });
     msg = 'Game restored.'; return true;
   }
@@ -150,16 +163,21 @@
     S.lastFirst = f;
     G = { bag: shuf(bag), crack: [], scores: [0, 0], turn: f === 'me' ? 0 : 1, first: f, passes: 0, over: false, last: [], lastWho: -1,
           st: { bingos: [0, 0], best: [['', 0], ['', 0]] }, board: Array.from({ length: N }, () => Array(N).fill(null)) };
-    refill();
-    while (G.crack.length < C.rackSize && G.bag.length) G.crack.push({ ch: G.bag.pop() });
+    const test = C.dev.noSBlank, bi = test ? G.bag.indexOf('?') : -1;
+    if (bi >= 0) { G.bag.splice(bi, 1); if (f === 'me') intoTray(rack, makeTile('?'), 0); else G.crack.push({ ch: '?' }); }
+    refill(test && f === 'me' ? ['S', '?'] : null);
+    while (G.crack.length < C.rackSize && G.bag.length) {
+      let i = G.bag.length - 1; if (test && f !== 'me') while (i > 0 && 'S?'.includes(G.bag[i])) i--;
+      G.crack.push({ ch: G.bag.splice(i, 1)[0] });
+    }
     sel = null; HL = null; cur = null; msg = 'New game. ' + (f === 'me' ? 'You start.' : 'Computer starts.');
   }
-  function refill() {   // Help my luck draws for the player
+  function refill(ex) {   // Help my luck draws for the player
     const f = { dup: S.hDup, bal: S.hBal, hard: S.hHard };
     for (let i = 0; i < rack.n; i++) {
       const held = hand(), need = C.rackSize - held.length; if (need <= 0 || !G.bag.length) break;
       if (rack.items[i]) continue;
-      const ch = E.pickTile(C, G.bag, held, need - 1, f, C.luck); if (ch == null) break;
+      const ch = E.pickTile(C, G.bag, held, need - 1, f, C.luck, ex); if (ch == null) break;
       G.bag.splice(G.bag.indexOf(ch), 1); intoTray(rack, makeTile(ch), i);
     }
   }
@@ -200,10 +218,10 @@
     fb.className = ok ? 'ok' : 'no'; fb.textContent = ok ? '✓ ' + w + ': face value ' + pts : '✕ ' + w + ' is not a word';
   }
   function refresh() { evaluate(); scFeedback(); save(); }
-  function moved() { evaluate(); scFeedback(); saveSoon(); }
+  function moved() { evaluate(); scFeedback(); saveSoon(); nextBlank(); }
+  function nextBlank() { if (pickT || SIM) return; const t = placed.find(x => x.ch === '?' && !x.as); if (t) { pickT = t; pickAt = Date.now(); $('pick').classList.add('on'); } }
   function placeOnBoard(t, r, c) {
     t.where = 'board'; t.r = r; t.c = c; t.el.classList.remove('ghost', 'sel'); t.el.remove(); placed.push(t); buzz(12); HL = null;
-    if (t.ch === '?' && !t.as) { pickT = t; $('pick').classList.add('on'); }
     clearTimeout(zoomT);
     if (placed.length === 1 && fit * S.zoom / 100 > view.s * 1.05) zoomT = setTimeout(() => zoomTo(r, c, fit * S.zoom / 100), 160);
     moved();
@@ -228,8 +246,9 @@
     const lv = [hand(), G.crack].map(a => a.reduce((s, t) => s + (t.ch === '?' ? 0 : C.values[t.ch]), 0));
     G.scores[0] -= lv[0]; G.scores[1] -= lv[1]; if (out >= 0) G.scores[out] += lv[1 - out];
     G.over = true; const [a, b] = G.scores;
+    msg = 'Game over.'; if (SIM) return;
     try { const h = hist(); h.push({ t: Date.now(), you: a, comp: b, first: G.first, bingos: G.st.bingos, best: G.st.best, level: S.level }); localStorage.setItem(HK, JSON.stringify(h.slice(-500))); } catch (e) {}
-    endText(); $('end').classList.add('on'); msg = 'Game over.';
+    endText(); $('end').classList.add('on');
   }
   function endText() {
     const [a, b] = G.scores, bp = k => G.st.best[k][1] ? G.st.best[k][0] + ' ' + G.st.best[k][1] : '-';
@@ -243,15 +262,44 @@
     return false;
   }
   function afterHuman() { HL = null; if (checkEnd()) { refresh(); return; } G.turn = 1; computerTurn(); }
+  function compMove(level) {
+    const m = E.aiPick(C, G.board, G.crack, level, S.noRare);
+    if (m) { commitMove(1, m.cs, m.r); msg = 'Computer played ' + m.r.words[0].w + ' for ' + m.r.total + '.'; HL = { total: m.r.total }; }
+    else if (G.bag.length >= C.rackSize) { G.bag.push(...G.crack.map(t => t.ch)); shuf(G.bag); G.crack = []; for (let i = 0; i < C.rackSize; i++) G.crack.push({ ch: G.bag.pop() }); G.passes++; msg = 'Computer swapped its tiles.'; }
+    else { G.passes++; msg = 'Computer passed.'; }
+  }
   function computerTurn() {
     busy = true; G.turn = 1; evaluate(); say('Computer is thinking...');
-    setTimeout(() => {
-      const m = E.aiPick(C, G.board, G.crack, S.level, S.noRare);
-      if (m) { commitMove(1, m.cs, m.r); msg = 'Computer played ' + m.r.words[0].w + ' for ' + m.r.total + '.'; HL = { total: m.r.total }; }
-      else if (G.bag.length >= C.rackSize) { G.bag.push(...G.crack.map(t => t.ch)); shuf(G.bag); G.crack = []; for (let i = 0; i < C.rackSize; i++) G.crack.push({ ch: G.bag.pop() }); G.passes++; msg = 'Computer swapped its tiles.'; }
-      else { G.passes++; msg = 'Computer passed.'; }
-      busy = false; G.turn = 0; checkEnd(); refresh(); zoomFit();
-    }, 120);
+    setTimeout(() => { if (SIM) return; compMove(S.level); busy = false; G.turn = 0; checkEnd(); refresh(); zoomFit(); }, 120);
+  }
+  // Simulation (started from the developer page): the computer plays both sides with the player's Help my luck draws.
+  function startSim(o) {
+    if (SIM || !E.ready || D) return; recallAll(); save();
+    let snap = null; try { snap = localStorage.getItem(KEY); } catch (e) {}
+    SIM = { o, snap, paused: false, timer: 0 }; document.body.classList.add('sim');
+    document.querySelectorAll('.ov.on').forEach(e => e.classList.remove('on')); $('mSimPause').textContent = 'Pause simulation';
+    newGame(); busy = true; view = { s: fit, x: 0, y: 0 }; evaluate(); say('Simulation started.'); SIM.timer = setTimeout(simTick, 300);
+  }
+  function simTick() {
+    if (!SIM || SIM.paused) return; const o = SIM.o;
+    if (G.turn === 0) {
+      const out = t => { const tr = t.where; tr.items[tr.items.indexOf(t)] = null; t.el.remove(); return t.ch; };
+      const m = E.aiPick(C, G.board, hand().map(t => ({ ch: t.ch })), o.a, S.noRare);
+      if (m) { m.cs.forEach(c => out(hand().find(x => x.ch === (c.bl ? '?' : c.ch)))); commitMove(0, m.cs, m.r); msg = 'Player played ' + m.r.words[0].w + ' for ' + m.r.total + '.'; }
+      else if (G.bag.length >= C.rackSize) { const back = hand().map(out); refill(); G.bag.push(...back); shuf(G.bag); G.passes++; msg = 'Player swapped tiles.'; }
+      else { G.passes++; msg = 'Player passed.'; }
+      G.turn = 1;
+    } else { compMove(o.b); G.turn = 0; }
+    HL = null; const over = checkEnd(); evaluate();
+    if (over) { say('Simulation finished: Player ' + G.scores[0] + ', Computer ' + G.scores[1] + '. Bingos ' + G.st.bingos[0] + ' and ' + G.st.bingos[1] + '. Stop it from the Menu.'); return; }
+    say(msg); SIM.timer = setTimeout(simTick, o.speed === 'fast' ? 0 : 2000);
+  }
+  function stopSim() {
+    if (!SIM) return; clearTimeout(SIM.timer); const snap = SIM.snap; SIM = null; document.body.classList.remove('sim');
+    [rack, scr].forEach(tr => { tr.items.forEach(t => t && t.el.remove()); tr.items = Array(tr.n).fill(null); }); placed = [];
+    try { if (snap) localStorage.setItem(KEY, snap); } catch (e) {}
+    if (!restore()) newGame();
+    busy = false; view = { s: fit, x: 0, y: 0 }; msg = 'Simulation stopped. Your game is back.'; refresh(); if (G.turn === 1 && !G.over) computerTurn();
   }
   async function loadDict() {
     busy = true; evaluate(); say('Loading the word list...');
@@ -334,6 +382,7 @@
   }
 
   // ---------- board drawing: one canvas, redrawn only when something changes ----------
+  const LKS = [.56, .61, .66], PKS = [.22, .25, .28];
   const KIND = { T: 'tw', D: 'dw', t: 'tl', d: 'dl', '*': 'st' }, FONT = 'system-ui,-apple-system,"Segoe UI",Roboto,sans-serif', MID = N >> 1;
   function rr(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
   function drawTile(x, y, s, L, P, blank, ring) {
@@ -346,13 +395,13 @@
     }
     if (ring) { ctx.strokeStyle = ring; ctx.lineWidth = Math.max(1.5, s * .07); rr(x + s * .035, y + s * .035, s * .93, s * .93, s * .12); ctx.stroke(); }
     ctx.fillStyle = blank ? '#b03a2e' : TH.pal.tileInk; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-    ctx.font = '800 ' + (s * .56) + 'px ' + FONT; ctx.fillText(L, x + s * .48, y + s * .665);
-    if (P !== '') { ctx.textAlign = 'right'; ctx.font = '800 ' + (s * .22) + 'px ' + FONT; ctx.fillText(P, x + s * .9, y + s * .86); }
+    const lk = LKS[S.lsz] || .56; ctx.font = '800 ' + (s * lk) + 'px ' + FONT; ctx.fillText(L, x + s * (.5 - lk * .06), y + s * (.47 + lk * .35));
+    if (P !== '') { ctx.textAlign = 'right'; ctx.font = '800 ' + (s * (PKS[S.psz] || .22)) + 'px ' + FONT; ctx.fillText(P, x + s * .9, y + s * .86); }
   }
   function drawBubble(b) {
     const s = view.s; ctx.font = '700 12px ' + FONT;
     const tw = ctx.measureText(b.text).width, pw = Math.max(20, tw + 12), ph = 19;
-    let bx = view.x + b.c * s - 5, by = view.y + b.r * s - 11;
+    let bx = view.x + b.c * s - 8, by = view.y + b.r * s - ph + 5;   // sits on the tile's top corner so the letter stays readable
     if (bx <= -pw || by <= -ph || bx >= W || by >= W) return;
     bx = Math.max(2, Math.min(W - pw - 2, bx)); by = Math.max(2, Math.min(W - ph - 2, by));   // kept inside the board picture
     ctx.fillStyle = b.kind === 'bad' ? '#d32f2f' : b.kind === 'cmp' ? '#e8590c' : b.kind === 'hov' ? '#5d6673' : b.kind === 'hbad' ? '#9a4a4a' : '#0a57c2';
@@ -404,6 +453,11 @@
       ctx.strokeStyle = '#1b4fa8'; ctx.lineWidth = 3; ctx.strokeRect(x + 1.5, y + 1.5, s - 3, s - 3);
       ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.strokeRect(x + 3.5, y + 3.5, s - 7, s - 7);
     }
+    if (D && D.tgt && D.tgt.cells) {   // a lifted word: its landing squares, blue when it scores, red when it does not
+      const ring = hov && hov.kind === 'hov' ? '#2E8BFF' : '#e0453f'; ctx.globalAlpha = .85;
+      D.tgt.cells.forEach((q, i) => { const t = D.grp[i]; drawTile(view.x + q.c * s, view.y + q.r * s, s, letter(t), t.ch === '?' ? '' : C.values[t.ch], t.ch === '?', ring); });
+      ctx.globalAlpha = 1;
+    }
     if (D && hov) { bubs.forEach(b => { if (b.kind === 'cmp') drawBubble(b); }); drawBubble(hov); } else bubs.forEach(drawBubble);   // bubbles last: always on top
   }
 
@@ -443,7 +497,7 @@
       view.s = f.s + (t.s - f.s) * e; view.x = f.x + (t.x - f.x) * e; view.y = f.y + (t.y - f.y) * e; dirty = true;
       if (k >= 1) tween = null;
     }
-    if (D) dragFrame(dt || 16);
+    if (D) (D.grp ? groupFrame : dragFrame)(dt || 16);
     if (dirty && G) { draw(); $('bFit').style.display = view.s > fit * 1.04 ? 'flex' : 'none'; }
     if (D || tween) kick(); else lastTs = 0;
   }
@@ -482,13 +536,7 @@
     d.lift += (tl - d.lift) * k; d.sz += (tz - d.sz) * k;
     const cx = d.x + d.ox, cy = d.y + d.oy - d.lift;
     d.t.el.style.transform = 'translate3d(' + (cx - 32) + 'px,' + (cy - 32) + 'px,0) scale(' + (d.sz / 64) + ')';
-    if (z === 'board' && view.s > fit * 1.02) {   // zoomed in: the board only moves when the tile is held at its edge
-      const px = cx - d.cvR.left, py = cy - d.cvR.top, m = W * .12, sp = 260 * dt / 1000;
-      let vx = 0, vy = 0;
-      if (px < m) vx = sp * (1 - px / m); else if (px > W - m) vx = -sp * (1 - (W - px) / m);
-      if (py < m) vy = sp * (1 - py / m); else if (py > W - m) vy = -sp * (1 - (W - py) / m);
-      if (vx || vy) { const ox = view.x, oy = view.y; view.x += vx; view.y += vy; clampView(view); if (ox !== view.x || oy !== view.y) dirty = true; }
-    }
+    if (z === 'board') edgePan(cx, cy, dt);
     setTarget(z, cx, cy);
   }
   function setTarget(z, cx, cy) {
@@ -512,18 +560,88 @@
     if (!nt) { say(z === 'board' ? 'That square is taken.' : 'Let go here and the tile goes back.'); return; }
     buzz(5);
     if (nt.tray) { say('Drop in the ' + nt.tray.name + ', position ' + (nt.j + 1) + '.'); return; }
-    const q = nt.cell, t = d.t;   // live check of the word the tile would make here
-    if (t.ch === '?' && !t.as) { say('Blank on ' + cellName(q.r, q.c) + ': you choose its letter when you drop it.'); return; }
-    if (!E.ready || placed.some(x => x.ch === '?' && !x.as)) { say('Drop on ' + cellName(q.r, q.c) + '.'); return; }
-    const r = E.evalMove(C, G.board, pcells().concat([{ r: q.r, c: q.c, ch: letter(t), bl: t.ch === '?' }]));
-    if (r.err) { say(r.err); return; }
+    const q = nt.cell, t = d.t;
+    hoverEval([{ r: q.r, c: q.c, ch: letter(t) || '?', bl: t.ch === '?' }]);
+  }
+  function edgePan(cx, cy, dt) {   // zoomed in: the board only moves when the tile is held at its edge
+    if (view.s <= fit * 1.02) return;
+    const px = cx - D.cvR.left, py = cy - D.cvR.top, m = W * .12, sp = 260 * dt / 1000; let vx = 0, vy = 0;
+    if (px < m) vx = sp * (1 - px / m); else if (px > W - m) vx = -sp * (1 - (W - px) / m);
+    if (py < m) vy = sp * (1 - py / m); else if (py > W - m) vy = -sp * (1 - (W - py) / m);
+    if (vx || vy) { const ox = view.x, oy = view.y; view.x += vx; view.y += vy; clampView(view); if (ox !== view.x || oy !== view.y) dirty = true; }
+  }
+  function hoverEval(cs) {   // live check of what the floating tile or word would make on these squares
+    if (cs.some(x => x.ch === '?')) { say('Blank tile: you choose its letter after you drop it.'); return; }
+    if (!E.ready) return;
+    const r = E.evalMove(C, G.board, pcells().concat(cs));
+    if (r.err) { hov = { r: cs[0].r, c: cs[0].c, text: '\u2715', kind: 'hbad' }; say(r.err); return; }
     const bad = r.words.filter(w => !w.ok);
-    if (bad.length) { hov = { r: bad[0].r, c: bad[0].c, text: '✕', kind: 'hbad' }; say('Not a word: ' + bad.map(w => w.w).join(', ')); }
-    else { hov = { r: r.words[0].r, c: r.words[0].c, text: String(r.total), kind: 'hov' }; say(r.words.map(w => w.w + ' ' + w.pts).join(', ') + ' = ' + r.total); }
+    if (bad.length) { hov = { r: bad[0].r, c: bad[0].c, text: '\u2715', kind: 'hbad' }; say('Not a word: ' + bad.map(w => w.w).join(', ')); }
+    else { hov = { r: r.words[0].r, c: r.words[0].c, text: String(r.total), kind: 'hov' }; say(r.words.map(w => w.w + ' ' + w.pts).join(', ') + (r.bingo ? ', bonus ' + r.bingo : '') + ' = ' + r.total); }
+  }
+  // Hold a tile in the scratch row: the run of touching tiles lifts as one piece, held by the tile under the finger.
+  // It does not have to be a word. On the board its letters skip squares that are already filled.
+  function startWord(p) {
+    const t = p.t, i = scr.items.indexOf(t); if (i < 0) return;
+    let lo = i, hi = i; while (lo > 0 && scr.items[lo - 1]) lo--; while (hi < scr.n - 1 && scr.items[hi + 1]) hi++;
+    if (lo === hi) { startDrag(p, { clientX: p.x0, clientY: p.y0 }); return; }
+    clearSel(); clearTimeout(zoomT); HL = null;
+    const grp = scr.items.slice(lo, hi + 1), idx = grp.map((x, k) => lo + k), box = document.createElement('div'); box.className = 'wghost';
+    grp.forEach((x, k) => { scr.items[lo + k] = null; x.where = null; x.el.classList.remove('sel'); x.el.style.transition = 'none'; box.appendChild(x.el); });
+    document.body.appendChild(box);
+    D = { t, grp, gi: i - lo, idx, box, id: p.id, touch: p.ptype !== 'mouse', x: p.x0, y: p.y0, lift: 0, g: 0, tgt: null, key: '-', origin: { tray: scr },
+          cvR: cv.getBoundingClientRect(), rackR: rack.box.getBoundingClientRect() };
+    evaluate(); scFeedback(); buzz(18); groupFrame(16); say('Word lifted. Drag it to the board.'); kick();
+  }
+  function groupFrame(dt) {
+    const d = D, k = Math.min(1, dt / 55), v = S.dir === 'v', n = d.grp.length;
+    const u = d.rackR.top - 6 - d.y, ramp = Math.max(0, Math.min(1, u / Math.max(1, S.lift * .8)));
+    d.lift += ((d.touch ? S.lift * (.35 + .65 * ramp) : 0) - d.lift) * k;
+    const g = Math.round(Math.max(26, Math.min(64, view.s * S.gs / 100)));
+    if (g !== d.g) {   // tiles line up along the chosen direction, with the held tile at the finger
+      d.g = g;
+      d.grp.forEach((t, j) => { const o = (j - d.gi) * g; t.el.style.setProperty('--sz', g + 'px'); t.el.style.transform = 'translate3d(' + ((v ? 0 : o) - g / 2) + 'px,' + ((v ? o : 0) - g / 2) + 'px,0)'; });
+    }
+    const cx = d.x, cy = d.y - d.lift;
+    d.box.style.transform = 'translate3d(' + cx + 'px,' + cy + 'px,0)';
+    let nt = null;
+    if (inR(cx, cy, d.cvR, 0)) {
+      edgePan(cx, cy, dt);
+      const fx = (cx - d.cvR.left - view.x) / view.s, fy = (cy - d.cvR.top - view.y) / view.s;
+      let q = { r: Math.floor(fy), c: Math.floor(fx) };
+      const o = d.tgt && d.tgt.a;
+      if (o && fx > o.c - .15 && fx < o.c + 1.15 && fy > o.r - .15 && fy < o.r + 1.15) q = o;
+      if (q.r >= 0 && q.c >= 0 && q.r < N && q.c < N && !occ(q.r, q.c)) {
+        const cells = Array(n), dr = v ? 1 : 0, dc = v ? 0 : 1; cells[d.gi] = q; let ok = true, r = q.r, c = q.c;
+        for (let j = d.gi + 1; j < n && ok; j++) { do { r += dr; c += dc; } while (r < N && c < N && occ(r, c)); if (r >= N || c >= N) ok = false; else cells[j] = { r, c }; }
+        r = q.r; c = q.c;
+        for (let j = d.gi - 1; j >= 0 && ok; j--) { do { r -= dr; c -= dc; } while (r >= 0 && c >= 0 && occ(r, c)); if (r < 0 || c < 0) ok = false; else cells[j] = { r, c }; }
+        if (ok) nt = { a: q, cells };
+      }
+    }
+    const key = nt ? 'w' + nt.a.r + ',' + nt.a.c : '';
+    if (key === d.key) return;
+    d.tgt = nt; d.key = key; hov = null; dirty = true;
+    if (!nt) { say(inR(cx, cy, d.cvR, 0) ? 'No room for the word here.' : 'Let go here and the word goes back.'); return; }
+    buzz(5); hoverEval(d.grp.map((t, j) => ({ r: nt.cells[j].r, c: nt.cells[j].c, ch: letter(t) || '?', bl: t.ch === '?' })));
   }
   function drop(cancelled) {
     const d = D, t = d.t; D = null; hov = null;
     rack.box.classList.remove('hot'); scr.box.classList.remove('hot');
+    if (d.grp) {
+      const g = d.tgt;
+      if (!cancelled && g) {
+        const first = !placed.length;
+        d.grp.forEach((x, j) => { x.el.remove(); x.el.style.transition = ''; x.where = 'board'; x.r = g.cells[j].r; x.c = g.cells[j].c; placed.push(x); });
+        d.box.remove(); buzz(15); HL = null; clearTimeout(zoomT);
+        if (first && fit * S.zoom / 100 > view.s * 1.05) zoomT = setTimeout(() => zoomTo(g.a.r, g.a.c, fit * S.zoom / 100), 160);
+        moved();
+      } else {
+        d.grp.forEach((x, j) => { const i = d.idx[j]; if (!scr.items[i]) intoTray(scr, x, i); else home(x); });
+        d.box.remove(); moved(); say('The word went back to the scratch row.');
+      }
+      dirty = true; kick(); return;
+    }
     const cx = d.x + d.ox, cy = d.y + d.oy - d.lift, g = d.tgt;
     if (!cancelled && g && g.cell) placeOnBoard(t, g.cell.r, g.cell.c);
     else if (!cancelled && g && g.tray) { g.tray.items = g.a; flyInto(g.tray, t, g.j, cx, cy); buzz(10); moved(); }
@@ -541,7 +659,9 @@
     if (D || P || locked() || e.target.closest('button')) return; const el = e.target.closest('.tile');
     P = el ? { kind: 'tile', t: el.__t, id: e.pointerId, x0: e.clientX, y0: e.clientY, ptype: e.pointerType }
            : { kind: 'tray', tray, id: e.pointerId, x0: e.clientX, y0: e.clientY, ptype: e.pointerType };
+    if (el && tray === scr) { const p = P; p.lp = setTimeout(() => { if (P === p && !locked()) { P = null; startWord(p); } }, 380); }
   }));
+  document.addEventListener('contextmenu', e => { if (!e.target.closest('input')) e.preventDefault(); });
   const ptrs = new Map(); let GS = null, lastTap = { t: 0, x: 0, y: 0 };
   cv.addEventListener('pointerdown', e => {
     if (D || P) return;
@@ -575,14 +695,14 @@
   cv.addEventListener('pointercancel', e => endPtr(e, true));
   cv.addEventListener('wheel', e => { e.preventDefault(); const r = cv.getBoundingClientRect(); zoomAt(e.clientX - r.left, e.clientY - r.top, e.deltaY < 0 ? 1.15 : .87); }, { passive: false });
   window.addEventListener('pointermove', e => {
-    if (P && e.pointerId === P.id && P.kind === 'tile' && Math.hypot(e.clientX - P.x0, e.clientY - P.y0) > 7) { const p = P; P = null; if (!locked()) startDrag(p, e); return; }
+    if (P && e.pointerId === P.id && P.kind === 'tile' && Math.hypot(e.clientX - P.x0, e.clientY - P.y0) > 7) { const p = P; P = null; clearTimeout(p.lp); if (!locked()) startDrag(p, e); return; }
     if (D && e.pointerId === D.id) { D.x = e.clientX; D.y = e.clientY; kick(); }
   });
   window.addEventListener('pointerup', e => {
-    if (P && e.pointerId === P.id) { const p = P; P = null; if (locked()) return; if (p.kind === 'tray') tapTray(p.tray, e.clientX); else tapTile(p.t); return; }
-    if (D && e.pointerId === D.id) { D.x = e.clientX; D.y = e.clientY; dragFrame(16); drop(false); }
+    if (P && e.pointerId === P.id) { const p = P; P = null; clearTimeout(p.lp); if (locked()) return; if (p.kind === 'tray') tapTray(p.tray, e.clientX); else tapTile(p.t); return; }
+    if (D && e.pointerId === D.id) { D.x = e.clientX; D.y = e.clientY; (D.grp ? groupFrame : dragFrame)(16); drop(false); }
   });
-  window.addEventListener('pointercancel', e => { if (P && e.pointerId === P.id) P = null; if (D && e.pointerId === D.id) drop(true); });
+  window.addEventListener('pointercancel', e => { if (P && e.pointerId === P.id) { clearTimeout(P.lp); P = null; } if (D && e.pointerId === D.id) drop(true); });
   document.addEventListener('visibilitychange', () => { if (document.hidden) { if (D) drop(true); save(); } });
   window.addEventListener('pagehide', save);
 
@@ -592,8 +712,21 @@
       if (sel) { say('That square is taken.'); return; }
       placed.splice(placed.indexOf(t), 1); home(t); moved(); return;
     }
+    const now = Date.now();
+    if (lastTT.t === t && now - lastTT.at < 340) { lastTT = { t: null, at: 0 }; clearSel(); quickPlace(t); return; }
+    lastTT = { t, at: now };
     if (sel === t) { clearSel(); evaluate(); return; }
     clearSel(); sel = t; t.el.classList.add('sel'); buzz(6); say('Tile selected. Tap a square, or a place in the rack.');
+  }
+  function quickPlace(t) {
+    if (!placed.length) { say('Place the first tile, then double-tap tiles to add them after it.'); return; }
+    let v = S.dir === 'v';
+    if (placed.length > 1) { if (placed.every(x => x.r === placed[0].r)) v = false; else if (placed.every(x => x.c === placed[0].c)) v = true; }
+    const dr = v ? 1 : 0, dc = v ? 0 : 1; let last = placed[0];
+    placed.forEach(x => { if ((v ? x.r : x.c) > (v ? last.r : last.c)) last = x; });
+    let r = last.r, c = last.c; do { r += dr; c += dc; } while (r < N && c < N && occ(r, c));
+    if (r >= N || c >= N) { say('No room after the tiles on the board.'); return; }
+    const tr = t.where; tr.items[tr.items.indexOf(t)] = null; placeOnBoard(t, r, c);
   }
   function tapTray(tray, x) {
     if (!sel) return; const t = sel, from = t.where, i = from.items.indexOf(t), j = slotAt(tray, x);
@@ -624,6 +757,26 @@
   $('bPass').onclick = () => { if (locked() || D) return; recallAll(); G.passes++; msg = 'You passed.'; zoomFit(); afterHuman(); };
   $('scClr').onclick = () => { if (locked() || D) return; clearSel(); scratchToRack(); moved(); };
   $('bFit').onclick = zoomFit;
+  $('bDir').onclick = () => { S.dir = S.dir === 'v' ? 'h' : 'v'; applySettings(); saveSoon(); say('Words go ' + (S.dir === 'v' ? 'down.' : 'across.')); };
+  function pasteLetters(txt) {   // pulls the tiles for these letters out of the hand, in order, into the scratch row
+    const want = (txt || '').toUpperCase().replace(/[^A-Z]/g, ''); if (!want) { say('Nothing to paste.'); return; }
+    clearSel(); scratchToRack(); let n = 0;
+    for (const ch of want) {
+      if (n >= scr.n) break;
+      const i = rack.items.findIndex(t => t && t.ch === ch), j = i >= 0 ? i : rack.items.findIndex(t => t && t.ch === '?');
+      if (j < 0) continue; const t = rack.items[j]; rack.items[j] = null; intoTray(scr, t, n++);
+    }
+    moved(); say(n === want.length ? 'Pasted ' + want + '.' : 'Pasted ' + n + ' of ' + want.length + ' letters: you do not hold the rest.');
+  }
+  $('scPaste').onclick = () => {
+    if (locked() || D) return;
+    const ask = () => { $('pasteIn').value = ''; open('paste'); try { $('pasteIn').focus(); } catch (e) {} };
+    try { navigator.clipboard.readText().then(t => { if (t && /[a-z]/i.test(t)) pasteLetters(t); else ask(); }).catch(ask); } catch (e) { ask(); }
+  };
+  $('pasteOk').onclick = () => { close('paste'); pasteLetters($('pasteIn').value); };
+  $('pasteCancel').onclick = () => close('paste');
+  $('mSimStop').onclick = () => { close('menu'); stopSim(); };
+  $('mSimPause').onclick = () => { if (!SIM) return; SIM.paused = !SIM.paused; $('mSimPause').textContent = SIM.paused ? 'Resume simulation' : 'Pause simulation'; close('menu'); if (!SIM.paused) simTick(); else say('Simulation paused.'); };
   let swapSel = new Set(), swapTiles = [];
   $('bSwap').onclick = () => {
     if (locked() || D) return; recallAll(); zoomFit(); moved();
@@ -645,10 +798,10 @@
   };
   for (const ch of COLS) {
     const b = document.createElement('button'); b.textContent = ch;
-    b.onclick = () => { close('pick'); const t = pickT; pickT = null; if (!t) return; t.as = ch; updTile(t); moved(); };
+    b.onclick = () => { if (Date.now() - pickAt < 350) return; close('pick'); const t = pickT; pickT = null; if (!t) return; t.as = ch; updTile(t); moved(); };
     $('letters').appendChild(b);
   }
-  $('pickCancel').onclick = () => { close('pick'); const t = pickT; pickT = null; if (t && t.where === 'board') { placed.splice(placed.indexOf(t), 1); home(t); moved(); } };
+  $('pickCancel').onclick = () => { if (Date.now() - pickAt < 350) return; close('pick'); const t = pickT; pickT = null; if (t && t.where === 'board') { placed.splice(placed.indexOf(t), 1); home(t); moved(); } };
   $('bagi').onclick = () => {
     if (!S.showBag || !G) return; const c = {}; G.bag.concat(G.crack.map(t => t.ch)).forEach(ch => { c[ch] = (c[ch] || 0) + 1; });
     $('bagGrid').innerHTML = [...COLS, '?'].map(ch => { const n = c[ch] || 0; return '<div class="bc' + (n ? '' : ' z') + '"><b>' + ch + '</b>' + n + '</div>'; }).join('');
@@ -657,7 +810,13 @@
   };
   $('bagClose').onclick = () => close('bagv');
   $('bMenu').onclick = () => open('menu'); $('mClose').onclick = () => close('menu');
-  $('mNew').onclick = startNew; $('endNew').onclick = startNew; $('endClose').onclick = () => close('end');
+  let newArm = 0;
+  $('mNew').onclick = () => {
+    if (SIM) { close('menu'); stopSim(); return; }
+    if (C.dev.confirmRestart && Date.now() - newArm > 4000) { newArm = Date.now(); $('mNew').textContent = 'Tap again to cancel this game'; return; }
+    newArm = 0; $('mNew').textContent = 'Cancel game and restart'; startNew();
+  };
+  $('endNew').onclick = startNew; $('endClose').onclick = () => close('end');
   $('mStats').onclick = () => { close('menu'); showStats(); }; $('statClose').onclick = () => close('stats');
   let clearArm = 0;
   $('statClear').onclick = () => {   // two taps instead of a browser confirm box
@@ -683,6 +842,7 @@
     close('menu');
     $('sTheme').value = S.theme; $('sMode').value = S.mode; $('sFirst').value = S.first; $('sLevel').value = S.level; $('sZoom').value = S.zoom;
     $('sRare').checked = S.noRare; $('hBal').checked = S.hBal; $('hDup').checked = S.hDup; $('hHard').checked = S.hHard; $('sBagOn').checked = S.showBag; $('sScr').checked = S.scratch; $('sHap').checked = S.hap;
+    $('sLsz').value = S.lsz; $('sPsz').value = S.psz;
     $('sLift').value = S.lift; $('vLift').textContent = S.lift + ' px'; $('lScr').style.display = C.scratch === false ? 'none' : '';
     open('set');
   };
@@ -691,6 +851,8 @@
   $('sMode').onchange = e => { S.mode = e.target.value; save(); setTheme(S.theme); };
   [['sFirst', 'first'], ['sLevel', 'level']].forEach(([id, k]) => { $(id).onchange = e => { S[k] = e.target.value; save(); }; });
   $('sZoom').onchange = e => { S.zoom = +e.target.value; save(); };
+  $('sLsz').onchange = e => { S.lsz = +e.target.value; applySettings(); save(); };
+  $('sPsz').onchange = e => { S.psz = +e.target.value; applySettings(); save(); };
   $('sLift').oninput = e => { S.lift = +e.target.value; $('vLift').textContent = S.lift + ' px'; saveSoon(); };
   [['sRare', 'noRare'], ['hBal', 'hBal'], ['hDup', 'hDup'], ['hHard', 'hHard'], ['sBagOn', 'showBag'], ['sHap', 'hap']].forEach(([id, k]) => { $(id).onchange = e => { S[k] = e.target.checked; applySettings(); save(); }; });
   $('sScr').onchange = e => { S.scratch = e.target.checked; if (!scrOn()) scratchToRack(); relayout(); moved(); };
@@ -701,7 +863,11 @@
     close('set'); loadDict();
   };
   $('sBuiltin').onclick = async () => { try { await idb(s => s.delete('dict')); } catch (x) {} close('set'); loadDict(); };
-  function applySettings() { $('bagi').classList.toggle('off', !S.showBag); }
+  function applySettings() {
+    $('bagi').classList.toggle('off', !S.showBag);
+    document.body.style.setProperty('--lk', LKS[S.lsz] || .56); document.body.style.setProperty('--pk', PKS[S.psz] || .22);
+    $('dA').classList.toggle('on', S.dir !== 'v'); $('dD').classList.toggle('on', S.dir === 'v'); dirty = true; kick();
+  }
   if (window.matchMedia) { const mq = matchMedia('(prefers-color-scheme: dark)'); const f = () => { if (S.mode === 'system' && TH.id) setTheme(S.theme, true); }; if (mq.addEventListener) mq.addEventListener('change', f); }
   window.addEventListener('resize', relayout);
 
@@ -718,6 +884,7 @@
     loadDict();
     try { if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost') && C.sw !== false) navigator.serviceWorker.register('sw.js').catch(() => {}); } catch (e) {}
   }
-  window.WG = { get G() { return G; }, get S() { return S; }, get placed() { return placed; }, rack, scr, TH, setTheme, startNew, get view() { return view; }, get fit() { return fit; }, get busy() { return busy; }, get D() { return D; } };
+  window.WG = { pickTile: (bag, tiles, left, f, L) => E.pickTile(C, bag, tiles, left, f, L), luckFlags: () => ({ dup: S.hDup, bal: S.hBal, hard: S.hHard }), startSim, stopSim,
+    get sim() { return SIM; }, get G() { return G; }, get S() { return S; }, get placed() { return placed; }, rack, scr, TH, setTheme, startNew, get view() { return view; }, get fit() { return fit; }, get busy() { return busy; }, get D() { return D; } };
   start();
 })();

@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "id": "carnival",
+  "name": "Carnival",
+  "fallback": "classic",
+  "note": "Colour-only test theme. It borrows the Classic tile, rack and square icons until real artwork is made.",
+  "assets": {},
+  "modes": {
+    "light": {
+      "palette": {
+        "page": "#FFF1DA",
+        "panel": "#FFFFFF",
+        "text": "#2B1638",
+        "muted": "#6E557A",
+        "plain": "#FFF3D6",
+        "grid": "#E6CF9A",
+        "tw": "#E23A4E",
+        "dw": "#F27DB2",
+        "tl": "#1F6FD6",
+        "dl": "#6CC4EE",
+        "st": "#F27DB2",
+        "accent": "#FFC62E",
+        "icon": "#2B1638",
+        "tileInk": "#292015"
+      }
+    },
+    "dark": {
+      "palette": {
+        "page": "#1B0F26",
+        "panel": "#2A1838",
+        "text": "#FFF1FA",
+        "muted": "#C9AEDA",
+        "plain": "#33204A",
+        "grid": "#51366E",
+        "tw": "#D5364A",
+        "dw": "#C04E8E",
+        "tl": "#2D78DC",
+        "dl": "#3A8FBF",
+        "st": "#C04E8E",
+        "accent": "#FFC62E",
+        "icon": "#FFF1FA",
+        "tileInk": "#292015",
+        "premiumInk": {
+          "tw": "#FFFFFF",
+          "dw": "#FFFFFF",
+          "tl": "#FFFFFF",
+          "dl": "#FFFFFF",
+          "st": "#FFFFFF"
+        }
+      }
+    }
+  }
+}

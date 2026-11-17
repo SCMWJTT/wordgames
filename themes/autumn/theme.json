@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "id": "autumn",
+  "name": "Autumn",
+  "fallback": "classic",
+  "note": "Colour-only test theme. It borrows the Classic tile, rack and square icons until real artwork is made.",
+  "assets": {},
+  "modes": {
+    "light": {
+      "palette": {
+        "page": "#FBEFDF",
+        "panel": "#FFFDF8",
+        "text": "#3A2414",
+        "muted": "#7A5E48",
+        "plain": "#F6E7CC",
+        "grid": "#D9BF95",
+        "tw": "#C8402F",
+        "dw": "#E98A9B",
+        "tl": "#2F5FA8",
+        "dl": "#8DB9DD",
+        "st": "#E98A9B",
+        "accent": "#E9A23B",
+        "icon": "#3A2414",
+        "tileInk": "#292015"
+      }
+    },
+    "dark": {
+      "palette": {
+        "page": "#1F140C",
+        "panel": "#2E1F14",
+        "text": "#F8EBDD",
+        "muted": "#C7AE98",
+        "plain": "#3A2A1C",
+        "grid": "#5A4330",
+        "tw": "#B83C2E",
+        "dw": "#A8506A",
+        "tl": "#3566AE",
+        "dl": "#3F78A0",
+        "st": "#A8506A",
+        "accent": "#E9A23B",
+        "icon": "#F8EBDD",
+        "tileInk": "#292015",
+        "premiumInk": {
+          "tw": "#FFFFFF",
+          "dw": "#FFFFFF",
+          "tl": "#FFFFFF",
+          "dl": "#FFFFFF",
+          "st": "#FFFFFF"
+        }
+      }
+    }
+  }
+}

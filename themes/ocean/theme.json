@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "id": "ocean",
+  "name": "Ocean",
+  "fallback": "classic",
+  "note": "Colour-only test theme. It borrows the Classic tile, rack and square icons until real artwork is made.",
+  "assets": {},
+  "modes": {
+    "light": {
+      "palette": {
+        "page": "#E3F1F6",
+        "panel": "#FFFFFF",
+        "text": "#12303D",
+        "muted": "#4F6B78",
+        "plain": "#F3EAD3",
+        "grid": "#CDBF9C",
+        "tw": "#D9483B",
+        "dw": "#EE7FA0",
+        "tl": "#1F6FB5",
+        "dl": "#6FBBD9",
+        "st": "#EE7FA0",
+        "accent": "#F2B544",
+        "icon": "#12303D",
+        "tileInk": "#292015"
+      }
+    },
+    "dark": {
+      "palette": {
+        "page": "#071E2B",
+        "panel": "#0F2E40",
+        "text": "#EAF6FA",
+        "muted": "#9DB8C4",
+        "plain": "#123A4F",
+        "grid": "#1F5570",
+        "tw": "#C8453C",
+        "dw": "#B8507A",
+        "tl": "#2C7FC4",
+        "dl": "#2F7F9F",
+        "st": "#B8507A",
+        "accent": "#F2B544",
+        "icon": "#EAF6FA",
+        "tileInk": "#292015",
+        "premiumInk": {
+          "tw": "#FFFFFF",
+          "dw": "#FFFFFF",
+          "tl": "#FFFFFF",
+          "dl": "#FFFFFF",
+          "st": "#FFFFFF"
+        }
+      }
+    }
+  }
+}

@@ -1,4 +1,26 @@
 [
-  {"id":"classic","name":"Classic"},
-  {"id":"christmas","name":"Christmas"}
+  {
+    "id": "classic",
+    "name": "Classic"
+  },
+  {
+    "id": "christmas",
+    "name": "Christmas"
+  },
+  {
+    "id": "ocean",
+    "name": "Ocean (test colours)"
+  },
+  {
+    "id": "autumn",
+    "name": "Autumn (test colours)"
+  },
+  {
+    "id": "space",
+    "name": "Space (test colours)"
+  },
+  {
+    "id": "carnival",
+    "name": "Carnival (test colours)"
+  }
 ]
