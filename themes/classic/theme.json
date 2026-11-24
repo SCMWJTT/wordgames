@@ -6,11 +6,11 @@
   "assets": {
     "tile": "tile.svg",
     "rack": "rack.svg",
-    "tw": "tw.svg",
-    "dw": "dw.svg",
-    "tl": "tl.svg",
-    "dl": "dl.svg",
-    "st": "st.svg"
+    "tw": "../../art/squares/standard/tw.svg",
+    "dw": "../../art/squares/standard/dw.svg",
+    "tl": "../../art/squares/standard/tl.svg",
+    "dl": "../../art/squares/standard/dl.svg",
+    "st": "../../art/squares/standard/st.svg"
   },
   "modes": {
     "light": {
@@ -31,10 +31,10 @@
         "tileInk": "#292015",
         "premiumInk": {
           "tw": "#FFFFFF",
-          "dw": "#59213A",
+          "dw": "#FFFFFF",
           "tl": "#FFFFFF",
-          "dl": "#17395A",
-          "st": "#59213A"
+          "dl": "#FFFFFF",
+          "st": "#FFFFFF"
         }
       }
     },
@@ -79,5 +79,14 @@
     "boardArtOpacity": 0,
     "surfaceOpacity": 0,
     "wallpaperOpacity": 0
+  },
+  "sounds": {
+    "pick": "../../art/sounds/pick.mp3",
+    "drop": "../../art/sounds/drop.mp3",
+    "bad": "../../art/sounds/bad.mp3",
+    "play": "../../art/sounds/play.mp3",
+    "bingo": "../../art/sounds/bingo.mp3",
+    "computer": "../../art/sounds/computer.mp3",
+    "win": "../../art/sounds/win.mp3"
   }
 }

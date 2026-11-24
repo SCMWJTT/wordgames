@@ -3,42 +3,53 @@
   "id": "space",
   "name": "Space",
   "fallback": "classic",
-  "note": "Colour-only test theme. It borrows the Classic tile, rack and square icons until real artwork is made.",
-  "assets": {},
+  "icon": "icon.png",
+  "assets": {
+    "tile": "tile.svg",
+    "rack": "rack.svg",
+    "tw": "tw.svg",
+    "dw": "dw.svg",
+    "tl": "tl.svg",
+    "dl": "dl.svg",
+    "st": "st.png",
+    "boardArt": "board-art.png",
+    "surface": "surface.webp"
+  },
+  "sounds": {
+    "pick": "pick.mp3",
+    "drop": "drop.mp3",
+    "bad": "bad.mp3",
+    "play": "play.mp3",
+    "bingo": "bingo.mp3",
+    "computer": "computer.mp3",
+    "win": "win.mp3"
+  },
+  "sprites": {
+    "particle": "particle.png",
+    "burst": "burst.png",
+    "pop": "pop.png",
+    "stAnim": "st-anim.png"
+  },
+  "layout": {
+    "centerScale": 1.8,
+    "premiumIconScale": 0.8
+  },
   "modes": {
     "light": {
       "palette": {
-        "page": "#ECEEFA",
+        "page": "#F1EEFF",
         "panel": "#FFFFFF",
-        "text": "#1B1F3B",
-        "muted": "#5B6080",
-        "plain": "#E9EAF6",
-        "grid": "#C3C6E0",
-        "tw": "#D8454F",
-        "dw": "#EC86B0",
-        "tl": "#3B55D0",
-        "dl": "#8FB4F0",
-        "st": "#EC86B0",
-        "accent": "#F4C04A",
-        "icon": "#1B1F3B",
-        "tileInk": "#292015"
-      }
-    },
-    "dark": {
-      "palette": {
-        "page": "#070A1C",
-        "panel": "#131836",
-        "text": "#EEF0FF",
-        "muted": "#A3A9CF",
-        "plain": "#1A2046",
-        "grid": "#2E3670",
-        "tw": "#C9414C",
-        "dw": "#B04E86",
-        "tl": "#4560DA",
-        "dl": "#3F6FB8",
-        "st": "#B04E86",
-        "accent": "#F4C04A",
-        "icon": "#EEF0FF",
+        "text": "#292015",
+        "muted": "#655B50",
+        "plain": "#F6F1E8",
+        "grid": "#C8BFD9",
+        "tw": "#E23A4E",
+        "dw": "#F27DB2",
+        "tl": "#1F6FD6",
+        "dl": "#6CC4EE",
+        "st": "#F27DB2",
+        "accent": "#F6B93F",
+        "icon": "#292015",
         "tileInk": "#292015",
         "premiumInk": {
           "tw": "#FFFFFF",
@@ -47,6 +58,47 @@
           "dl": "#FFFFFF",
           "st": "#FFFFFF"
         }
+      },
+      "assets": {
+        "wallpaper": "bg.webp"
+      },
+      "effects": {
+        "boardArtOpacity": 0.14,
+        "surfaceOpacity": 0.5,
+        "wallpaperOpacity": 1
+      }
+    },
+    "dark": {
+      "palette": {
+        "page": "#0C102A",
+        "panel": "#22263D",
+        "text": "#F3ECE3",
+        "muted": "#C9BDB0",
+        "plain": "#F3E8D6",
+        "grid": "#B5A5C6",
+        "tw": "#D5364A",
+        "dw": "#C04E8E",
+        "tl": "#2D78DC",
+        "dl": "#3A8FBF",
+        "st": "#C04E8E",
+        "accent": "#F6B93F",
+        "icon": "#F3ECE3",
+        "tileInk": "#292015",
+        "premiumInk": {
+          "tw": "#FFFFFF",
+          "dw": "#FFFFFF",
+          "tl": "#FFFFFF",
+          "dl": "#FFFFFF",
+          "st": "#FFFFFF"
+        }
+      },
+      "assets": {
+        "wallpaper": "bg-dark.webp"
+      },
+      "effects": {
+        "boardArtOpacity": 0.12,
+        "surfaceOpacity": 0.5,
+        "wallpaperOpacity": 1
       }
     }
   }

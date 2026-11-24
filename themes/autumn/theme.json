@@ -3,42 +3,53 @@
   "id": "autumn",
   "name": "Autumn",
   "fallback": "classic",
-  "note": "Colour-only test theme. It borrows the Classic tile, rack and square icons until real artwork is made.",
-  "assets": {},
+  "icon": "icon.png",
+  "assets": {
+    "tile": "tile.svg",
+    "rack": "rack.svg",
+    "tw": "tw.svg",
+    "dw": "dw.svg",
+    "tl": "tl.svg",
+    "dl": "dl.svg",
+    "st": "st.png",
+    "boardArt": "board-art.png",
+    "surface": "surface.webp"
+  },
+  "sounds": {
+    "pick": "pick.mp3",
+    "drop": "drop.mp3",
+    "bad": "bad.mp3",
+    "play": "play.mp3",
+    "bingo": "bingo.mp3",
+    "computer": "computer.mp3",
+    "win": "win.mp3"
+  },
+  "sprites": {
+    "particle": "particle.png",
+    "burst": "burst.png",
+    "pop": "pop.png",
+    "stAnim": "st-anim.png"
+  },
+  "layout": {
+    "centerScale": 1.8,
+    "premiumIconScale": 0.8
+  },
   "modes": {
     "light": {
       "palette": {
-        "page": "#FBEFDF",
-        "panel": "#FFFDF8",
-        "text": "#3A2414",
-        "muted": "#7A5E48",
-        "plain": "#F6E7CC",
-        "grid": "#D9BF95",
-        "tw": "#C8402F",
-        "dw": "#E98A9B",
-        "tl": "#2F5FA8",
-        "dl": "#8DB9DD",
-        "st": "#E98A9B",
-        "accent": "#E9A23B",
-        "icon": "#3A2414",
-        "tileInk": "#292015"
-      }
-    },
-    "dark": {
-      "palette": {
-        "page": "#1F140C",
-        "panel": "#2E1F14",
-        "text": "#F8EBDD",
-        "muted": "#C7AE98",
-        "plain": "#3A2A1C",
-        "grid": "#5A4330",
-        "tw": "#B83C2E",
-        "dw": "#A8506A",
-        "tl": "#3566AE",
-        "dl": "#3F78A0",
-        "st": "#A8506A",
-        "accent": "#E9A23B",
-        "icon": "#F8EBDD",
+        "page": "#FBF1E4",
+        "panel": "#FFFFFF",
+        "text": "#292015",
+        "muted": "#655B50",
+        "plain": "#F5EBD6",
+        "grid": "#D7C09A",
+        "tw": "#E23A4E",
+        "dw": "#F27DB2",
+        "tl": "#1F6FD6",
+        "dl": "#6CC4EE",
+        "st": "#F27DB2",
+        "accent": "#F6B93F",
+        "icon": "#292015",
         "tileInk": "#292015",
         "premiumInk": {
           "tw": "#FFFFFF",
@@ -47,6 +58,47 @@
           "dl": "#FFFFFF",
           "st": "#FFFFFF"
         }
+      },
+      "assets": {
+        "wallpaper": "bg.webp"
+      },
+      "effects": {
+        "boardArtOpacity": 0.14,
+        "surfaceOpacity": 0.5,
+        "wallpaperOpacity": 1
+      }
+    },
+    "dark": {
+      "palette": {
+        "page": "#2B1F1A",
+        "panel": "#3E332F",
+        "text": "#F3ECE3",
+        "muted": "#C9BDB0",
+        "plain": "#EEDDBF",
+        "grid": "#BA9568",
+        "tw": "#D5364A",
+        "dw": "#C04E8E",
+        "tl": "#2D78DC",
+        "dl": "#3A8FBF",
+        "st": "#C04E8E",
+        "accent": "#F6B93F",
+        "icon": "#F3ECE3",
+        "tileInk": "#292015",
+        "premiumInk": {
+          "tw": "#FFFFFF",
+          "dw": "#FFFFFF",
+          "tl": "#FFFFFF",
+          "dl": "#FFFFFF",
+          "st": "#FFFFFF"
+        }
+      },
+      "assets": {
+        "wallpaper": "bg-dark.webp"
+      },
+      "effects": {
+        "boardArtOpacity": 0.12,
+        "surfaceOpacity": 0.5,
+        "wallpaperOpacity": 1
       }
     }
   }

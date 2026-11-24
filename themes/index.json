@@ -4,23 +4,31 @@
     "name": "Classic"
   },
   {
+    "id": "carnival",
+    "name": "Carnival"
+  },
+  {
     "id": "christmas",
     "name": "Christmas"
   },
   {
+    "id": "tropical",
+    "name": "Tropical"
+  },
+  {
     "id": "ocean",
-    "name": "Ocean (test colours)"
+    "name": "Ocean"
   },
   {
     "id": "autumn",
-    "name": "Autumn (test colours)"
+    "name": "Autumn"
+  },
+  {
+    "id": "football",
+    "name": "Football"
   },
   {
     "id": "space",
-    "name": "Space (test colours)"
-  },
-  {
-    "id": "carnival",
-    "name": "Carnival (test colours)"
+    "name": "Space"
   }
 ]

@@ -3,15 +3,44 @@
   "id": "carnival",
   "name": "Carnival",
   "fallback": "classic",
-  "note": "Colour-only test theme. It borrows the Classic tile, rack and square icons until real artwork is made.",
-  "assets": {},
+  "icon": "icon.png",
+  "assets": {
+    "tile": "tile.svg",
+    "rack": "rack.svg",
+    "tw": "tw.svg",
+    "dw": "dw.svg",
+    "tl": "tl.svg",
+    "dl": "dl.svg",
+    "st": "st.png",
+    "boardArt": "board-art.png",
+    "surface": "surface.webp"
+  },
+  "sounds": {
+    "pick": "pick.mp3",
+    "drop": "drop.mp3",
+    "bad": "bad.mp3",
+    "play": "play.mp3",
+    "bingo": "bingo.mp3",
+    "computer": "computer.mp3",
+    "win": "win.mp3"
+  },
+  "sprites": {
+    "particle": "particle.png",
+    "burst": "burst.png",
+    "pop": "pop.png",
+    "stAnim": "st-anim.png"
+  },
+  "layout": {
+    "centerScale": 1.8,
+    "premiumIconScale": 0.8
+  },
   "modes": {
     "light": {
       "palette": {
         "page": "#FFF1DA",
         "panel": "#FFFFFF",
-        "text": "#2B1638",
-        "muted": "#6E557A",
+        "text": "#292015",
+        "muted": "#655B50",
         "plain": "#FFF3D6",
         "grid": "#E6CF9A",
         "tw": "#E23A4E",
@@ -19,26 +48,8 @@
         "tl": "#1F6FD6",
         "dl": "#6CC4EE",
         "st": "#F27DB2",
-        "accent": "#FFC62E",
-        "icon": "#2B1638",
-        "tileInk": "#292015"
-      }
-    },
-    "dark": {
-      "palette": {
-        "page": "#1B0F26",
-        "panel": "#2A1838",
-        "text": "#FFF1FA",
-        "muted": "#C9AEDA",
-        "plain": "#33204A",
-        "grid": "#51366E",
-        "tw": "#D5364A",
-        "dw": "#C04E8E",
-        "tl": "#2D78DC",
-        "dl": "#3A8FBF",
-        "st": "#C04E8E",
-        "accent": "#FFC62E",
-        "icon": "#FFF1FA",
+        "accent": "#F6B93F",
+        "icon": "#292015",
         "tileInk": "#292015",
         "premiumInk": {
           "tw": "#FFFFFF",
@@ -47,6 +58,47 @@
           "dl": "#FFFFFF",
           "st": "#FFFFFF"
         }
+      },
+      "assets": {
+        "wallpaper": "bg.webp"
+      },
+      "effects": {
+        "boardArtOpacity": 0.14,
+        "surfaceOpacity": 0.5,
+        "wallpaperOpacity": 1
+      }
+    },
+    "dark": {
+      "palette": {
+        "page": "#1B0F26",
+        "panel": "#30253A",
+        "text": "#F3ECE3",
+        "muted": "#C9BDB0",
+        "plain": "#33204A",
+        "grid": "#51366E",
+        "tw": "#D5364A",
+        "dw": "#C04E8E",
+        "tl": "#2D78DC",
+        "dl": "#3A8FBF",
+        "st": "#C04E8E",
+        "accent": "#F6B93F",
+        "icon": "#F3ECE3",
+        "tileInk": "#292015",
+        "premiumInk": {
+          "tw": "#FFFFFF",
+          "dw": "#FFFFFF",
+          "tl": "#FFFFFF",
+          "dl": "#FFFFFF",
+          "st": "#FFFFFF"
+        }
+      },
+      "assets": {
+        "wallpaper": "bg-dark.webp"
+      },
+      "effects": {
+        "boardArtOpacity": 0.12,
+        "surfaceOpacity": 0.5,
+        "wallpaperOpacity": 1
       }
     }
   }

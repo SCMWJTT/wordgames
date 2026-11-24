@@ -16,7 +16,7 @@
   // ---------- page ----------
   document.title = C.name;
   document.body.insertAdjacentHTML('afterbegin',
-    '<div id="appbg"></div><div id="app">' +
+    '<div id="appbg"></div><canvas id="fxb"></canvas><canvas id="fxt"></canvas><div id="app">' +
     '<div id="top"><img id="logo" alt="" src="' + ART + (C.logo || 'logo-wordgames.svg') + '"><div id="title"></div>' +
       '<div id="sbox"><div class="sc" id="sc0"><span><i class="dt"></i>You</span><b id="s0">0</b></div><div class="sc cp" id="sc1"><span><i class="dt"></i>Computer</span><b id="s1">0</b></div>' +
       '<button id="bagi" aria-label="Unseen tiles"><div class="sc"><span>Bag</span><b id="bagn">0</b></div><img id="bagimg" alt="" src="' + ART + 'bag.svg"></button></div></div>' +
@@ -41,8 +41,12 @@
     '<div class="ov" id="set"><div class="box">' +
       '<h4>Look</h4><label>Theme<select id="sTheme"></select></label>' +
       '<label>Light or dark<select id="sMode"><option value="system">Same as the phone</option><option value="light">Light</option><option value="dark">Dark</option></select></label>' +
-      '<label>Letter size on the tiles<select id="sLsz"><option value="0">Normal</option><option value="1">Large</option><option value="2">Extra large</option></select></label>' +
+      '<label>Square symbols<select id="sSym"><option value="theme">From the theme</option></select></label>' +
+      '<label>Letter size on the tiles<select id="sLsz"><option value="0">Normal</option><option value="1">Large</option><option value="2">Extra large</option><option value="3">Huge</option><option value="4">Biggest</option></select></label>' +
       '<label>Points size on the tiles<select id="sPsz"><option value="0">Normal</option><option value="1">Large</option><option value="2">Extra large</option></select></label>' +
+      '<h4>Sound and movement</h4><label class="ck"><input type="checkbox" id="sSfx"> Sound effects</label>' +
+      '<label class="ck"><input type="checkbox" id="sMus"> Background music (when the theme has it)</label>' +
+      '<label class="ck"><input type="checkbox" id="sMot"> Moving decorations (particles, centre piece, celebrations)</label>' +
       '<h4>Game</h4><label>Who plays first<select id="sFirst"><option value="random">Random</option><option value="me">Me</option><option value="computer">Computer</option><option value="alternate">Take turns each game</option></select></label>' +
       '<label>Computer level<select id="sLevel"><option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option></select></label>' +
       '<label class="ck"><input type="checkbox" id="sRare"> Computer avoids rare and obscene words</label>' +
@@ -52,6 +56,7 @@
       '<label class="ck"><input type="checkbox" id="sBagOn"> Allow viewing unseen tiles (Bag button)</label>' +
       '<label class="ck" id="lScr"><input type="checkbox" id="sScr"> Show the scratch row</label>' +
       '<h4>Movement</h4><label><span>Tile height above the finger: <b id="vLift"></b></span><input type="range" id="sLift" min="0" max="90" step="2"></label>' +
+      '<label><span>Word height above the finger (scratch row words): <b id="vWl"></b></span><input type="range" id="sWl" min="0" max="90" step="2"></label>' +
       '<label>Zoom in after the first tile is dropped<select id="sZoom"><option value="100">Off</option><option value="130">130%</option><option value="160">160%</option><option value="200">200%</option><option value="250">250%</option></select></label>' +
       '<label class="ck"><input type="checkbox" id="sHap"> Vibration feedback</label>' +
       '<h4>Word list</h4><label><input type="file" id="sFile" accept=".txt"></label><small id="dictInfo"></small><button id="sBuiltin">Use the built-in word list</button>' +
@@ -61,7 +66,7 @@
 
   // ---------- state ----------
   let S = { theme: 'classic', mode: 'system', level: 'hard', first: 'random', lastFirst: 'computer', noRare: true, hBal: true, hDup: true, hHard: true, showBag: true,
-            scratch: true, lift: 48, gs: 125, zoom: 160, hap: true, dir: 'h', lsz: 0, psz: 0 };
+            scratch: true, lift: 48, gs: 125, zoom: 160, hap: true, dir: 'h', lsz: 0, psz: 0, wlift: 24, sym: 'theme', sfx: true, music: true, motion: !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) };
   let G = null, placed = [], sel = null, P = null, D = null, cur = null, bubs = [], hov = null, pickT = null, msg = '', busy = true, HL = null, saveT = 0, SIM = null, lastTT = { t: null, at: 0 }, pickAt = 0;
   const rack = { el: $('rack'), box: $('rackBox'), items: [], n: C.rackSize, sw: 0, off: 0, name: 'rack' };
   const scr  = { el: $('scr'),  box: $('scrBox'),  items: [], n: C.rackSize, sw: 0, off: 0, name: 'scratch row' };
@@ -88,7 +93,7 @@
     if (!G || SIM) return;
     try {
       const pk = t => t ? { ch: t.ch, as: t.as || '' } : null;
-      localStorage.setItem(KEY, JSON.stringify({ S, G: Object.assign({}, G, { rack: rack.items.map(pk), scr: scr.items.map(pk), placed: placed.map(t => ({ ch: t.ch, as: t.as || '', r: t.r, c: t.c })) }) }));
+      localStorage.setItem(KEY, JSON.stringify({ S, G: Object.assign({}, G, { rack: rack.items.map(pk), scr: scr.items.map(pk), placed: placed.map(t => ({ ch: t.ch, as: t.as || '', r: t.r, c: t.c, g: t.g ? groupsOf().indexOf(t.g) : -1 })) }) }));
     } catch (e) {}
   }
   const saveSoon = () => { clearTimeout(saveT); saveT = setTimeout(save, 400); };
@@ -101,7 +106,11 @@
           st: g.st || { bingos: [0, 0], best: [['', 0], ['', 0]] } };
     g.rack.forEach((x, i) => { if (x) intoTray(rack, makeTile(x.ch), i); });
     (g.scr || []).forEach((x, i) => { if (x) { const t = makeTile(x.ch); if (i < scr.n) intoTray(scr, t, i); else home(t); } });
-    (g.placed || []).forEach(x => { const t = makeTile(x.ch); t.as = x.as || ''; updTile(t); t.where = 'board'; t.r = x.r; t.c = x.c; placed.push(t); });
+    const gs = {};
+    (g.placed || []).forEach(x => {
+      const t = makeTile(x.ch); t.as = x.as || ''; updTile(t); t.where = 'board'; t.r = x.r; t.c = x.c; placed.push(t);
+      if (x.g >= 0) { const gr = gs[x.g] || (gs[x.g] = { tiles: [] }); gr.tiles.push(t); t.g = gr; }
+    });
     msg = 'Game restored.'; return true;
   }
 
@@ -196,7 +205,7 @@
     const r = E.evalMove(C, G.board, pcells());
     if (r.err) { say(r.err); off(); return; }
     const bad = r.words.filter(w => !w.ok);
-    if (bad.length) { bad.forEach(w => bubs.push({ r: w.r, c: w.c, text: '✕', kind: 'bad' })); say('Not a word: ' + bad.map(w => w.w).join(', ')); off(); return; }
+    if (bad.length) { lastBadAt = Date.now(); bad.forEach(w => bubs.push({ r: w.r, c: w.c, text: '✕', kind: 'bad' })); say('Not a word: ' + bad.map(w => w.w).join(', ')); off(); return; }
     bubs.push({ r: r.words[0].r, c: r.words[0].c, text: String(r.total), kind: 'ok' });
     say(r.words.map(w => w.w + ' ' + w.pts).join(', ') + (r.bingo ? ', bonus ' + r.bingo : '') + ' = ' + r.total);
     cur = r; $('bPlay').disabled = G.over || G.turn !== 0; $('bPlayT').textContent = 'Play ' + r.total;
@@ -221,13 +230,21 @@
   function moved() { evaluate(); scFeedback(); saveSoon(); nextBlank(); }
   function nextBlank() { if (pickT || SIM) return; const t = placed.find(x => x.ch === '?' && !x.as); if (t) { pickT = t; pickAt = Date.now(); $('pick').classList.add('on'); } }
   function placeOnBoard(t, r, c) {
-    t.where = 'board'; t.r = r; t.c = c; t.el.classList.remove('ghost', 'sel'); t.el.remove(); placed.push(t); buzz(12); HL = null;
+    t.where = 'board'; t.r = r; t.c = c; t.g = null; t.el.classList.remove('ghost', 'sel'); t.el.remove(); placed.push(t); buzz(12); HL = null; dropFx(r, c);
     clearTimeout(zoomT);
     if (placed.length === 1 && fit * S.zoom / 100 > view.s * 1.05) zoomT = setTimeout(() => zoomTo(r, c, fit * S.zoom / 100), 160);
     moved();
   }
   function clearSel() { if (sel) sel.el.classList.remove('sel'); sel = null; }
-  function recallAll() { clearSel(); placed.splice(0).forEach(home); }
+  const groupsOf = () => { const l = []; placed.forEach(t => { if (t.g && !l.includes(t.g)) l.push(t.g); }); return l; };
+  function sendBack(tiles) {   // a word goes back to the scratch row in its order (to the rack if the row is full)
+    tiles.forEach(t => { t.g = null; const i = placed.indexOf(t); if (i >= 0) placed.splice(i, 1); });
+    if (!scrOn()) { tiles.forEach(home); return; }
+    let start = -1;
+    for (let i = 0; i + tiles.length <= scr.n && start < 0; i++) if (scr.items.slice(i, i + tiles.length).every(x => !x)) start = i;
+    tiles.forEach((t, j) => { if (start >= 0) intoTray(scr, t, start + j); else { const f = firstFree(scr); if (f >= 0) intoTray(scr, t, f); else home(t); } });
+  }
+  function recallAll() { clearSel(); groupsOf().forEach(g => sendBack(g.tiles.filter(t => placed.includes(t)))); placed.splice(0).forEach(home); }
 
   // ---------- turns ----------
   function commitMove(who, cs, r) {
@@ -249,6 +266,7 @@
     msg = 'Game over.'; if (SIM) return;
     try { const h = hist(); h.push({ t: Date.now(), you: a, comp: b, first: G.first, bingos: G.st.bingos, best: G.st.best, level: S.level }); localStorage.setItem(HK, JSON.stringify(h.slice(-500))); } catch (e) {}
     endText(); $('end').classList.add('on');
+    if (a > b) { playSnd('win'); burst(); } else if (a < b) playSnd('lose');
   }
   function endText() {
     const [a, b] = G.scores, bp = k => G.st.best[k][1] ? G.st.best[k][0] + ' ' + G.st.best[k][1] : '-';
@@ -264,7 +282,7 @@
   function afterHuman() { HL = null; if (checkEnd()) { refresh(); return; } G.turn = 1; computerTurn(); }
   function compMove(level) {
     const m = E.aiPick(C, G.board, G.crack, level, S.noRare);
-    if (m) { commitMove(1, m.cs, m.r); msg = 'Computer played ' + m.r.words[0].w + ' for ' + m.r.total + '.'; HL = { total: m.r.total }; }
+    if (m) { commitMove(1, m.cs, m.r); msg = 'Computer played ' + m.r.words[0].w + ' for ' + m.r.total + '.'; HL = { total: m.r.total }; if (!SIM) playSnd('computer'); }
     else if (G.bag.length >= C.rackSize) { G.bag.push(...G.crack.map(t => t.ch)); shuf(G.bag); G.crack = []; for (let i = 0; i < C.rackSize; i++) G.crack.push({ ch: G.bag.pop() }); G.passes++; msg = 'Computer swapped its tiles.'; }
     else { G.passes++; msg = 'Computer passed.'; }
   }
@@ -330,7 +348,8 @@
   async function setTheme(id, quiet) {   // loads everything needed first, then switches in one go; a failure keeps the current look
     const tok = ++themeTok, mode = curMode(), A = {}, cdir = BASE + 'themes/classic/';
     let pal, ink, fx, lay, name = 'Classic', base = null;
-    const put = (m, dir) => { Object.keys(m.assets || {}).forEach(k => { A[k] = dir + m.assets[k]; }); const ma = (m.modes[mode] || {}).assets || {}; Object.keys(ma).forEach(k => { A[k] = dir + ma[k]; }); };
+    const SND = {}, SPR = {};
+    const put = (m, dir) => { Object.keys(m.sounds || {}).forEach(k => { SND[k] = dir + m.sounds[k]; }); Object.keys(m.sprites || {}).forEach(k => { SPR[k] = dir + m.sprites[k]; }); Object.keys(m.assets || {}).forEach(k => { A[k] = dir + m.assets[k]; }); const ma = (m.modes[mode] || {}).assets || {}; Object.keys(ma).forEach(k => { A[k] = dir + ma[k]; }); };
     try {
       base = await manifest('classic'); put(base, cdir);
       const bm = base.modes[mode] || base.modes.light;
@@ -346,6 +365,11 @@
       pal = Object.assign({}, DEF); ink = DEF.premiumInk; fx = {}; lay = { centerScale: 1, premiumIconScale: .82 }; id = 'classic';
     }
     pal.premiumInk = ink;
+    if (S.sym && S.sym !== 'theme') {   // a shared symbol set replaces the theme's square symbols (the theme's big centre piece stays)
+      const sd = BASE + 'art/squares/' + S.sym + '/';
+      ['tw', 'dw', 'tl', 'dl'].forEach(k => { A[k] = sd + k + '.svg'; });
+      if (!A.st || /\.svg$/i.test(A.st)) A.st = sd + 'st.svg';
+    }
     const img = {};
     await Promise.all(['tile', 'tw', 'dw', 'tl', 'dl', 'st'].map(async k => {
       if (!A[k]) { img[k] = null; return; }
@@ -364,6 +388,10 @@
     const mt = document.querySelector('meta[name=theme-color]'); if (mt) mt.content = pal.page;
     Object.assign(TH, { id, mode, pal, fx, lay, img, tint: {}, bmp: null, bmpKey: 0, pat: null, pad: A.frame ? 10 : 5, orn: !!img.st && (!/\.svg$/i.test(A.st) || lay.centerScale > 1) });
     relayout();
+    TH.spr = {}; TH.stF = 0;
+    Object.keys(SPR).forEach(k => loadImg(SPR[k]).then(i => { if (tok === themeTok) { TH.spr[k] = { img: i, n: Math.max(1, Math.round(i.width / i.height)), w: i.height }; if (k === 'particle') particles(); } }).catch(() => {}));
+    if (!SPR.particle) particles();
+    loadSounds(SND, tok);
     if (A.boardArt && fx.boardArtOpacity > 0) loadImg(A.boardArt).then(i => { if (tok === themeTok) { TH.img.art = i; dirty = true; kick(); } }).catch(() => {});
     if (A.surface && fx.surfaceOpacity > 0) loadImg(A.surface).then(i => { if (tok === themeTok) { TH.img.surf = i; TH.pat = null; dirty = true; kick(); } }).catch(() => {});
     if (!quiet) say('Theme: ' + name + (mode === 'dark' ? ', dark.' : ', light.'));
@@ -381,8 +409,77 @@
     return TH.bmp;
   }
 
+  // ---------- sound (Web Audio: decoded once per theme, plays instantly, nothing runs while silent) ----------
+  let AC = null, SB = {}, music = null, lastBad = 0, lastBadAt = 0;
+  function audio() {
+    if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { AC = null; } }
+    if (AC && AC.state === 'suspended') AC.resume().catch(() => {});
+    return AC;
+  }
+  async function loadSounds(map, tok) {
+    stopMusic(); SB = {}; const ac = audio(); if (!ac) return;
+    await Promise.all(Object.keys(map).map(async k => {
+      try { const b = await (await fetch(map[k])).arrayBuffer(); const buf = await new Promise((res, rej) => ac.decodeAudioData(b, res, rej)); if (tok === themeTok) SB[k] = buf; } catch (e) {}
+    }));
+    if (tok === themeTok) startMusic();
+  }
+  function playSnd(k, vol) {
+    if (!S.sfx || SIM || !SB[k] || !AC || AC.state !== 'running') return;
+    try { const src = AC.createBufferSource(), g = AC.createGain(); g.gain.value = vol || .6; src.buffer = SB[k]; src.connect(g); g.connect(AC.destination); src.start(); } catch (e) {}
+  }
+  function startMusic() {
+    stopMusic(); if (!S.music || !SB.loop || !AC || AC.state !== 'running' || document.hidden) return;
+    try { const src = AC.createBufferSource(), g = AC.createGain(); g.gain.value = .22; src.buffer = SB.loop; src.loop = true; src.connect(g); g.connect(AC.destination); src.start(); music = src; } catch (e) {}
+  }
+  function stopMusic() { if (music) { try { music.stop(); } catch (e) {} music = null; } }
+  // Phones only allow sound after a tap, so the first touch anywhere switches sound on.
+  window.addEventListener('pointerdown', () => { const was = AC && AC.state === 'running'; audio(); if (!was && AC) setTimeout(() => { if (!music) startMusic(); }, 60); }, { capture: true });
+
+  // ---------- movement: particles behind the game, bursts and sparkles in front ----------
+  const fxb = $('fxb'), fxt = $('fxt'), bx = fxb.getContext('2d'), tx = fxt.getContext('2d');
+  let parts = [], pRun = 0, pLast = 0, shots = [], sRun = 0;
+  function sizeFx() { const d = Math.min(2, window.devicePixelRatio || 1); [fxb, fxt].forEach(c => { c.width = Math.round(innerWidth * d); c.height = Math.round(innerHeight * d); c.style.width = innerWidth + 'px'; c.style.height = innerHeight + 'px'; c.getContext('2d').setTransform(d, 0, 0, d, 0, 0); }); }
+  function particles() {   // 14 slow particles; bubbles rise, everything else falls and sways
+    cancelAnimationFrame(pRun); pRun = 0; bx.clearRect(0, 0, innerWidth, innerHeight);
+    const sp = TH.spr && TH.spr.particle; parts = [];
+    if (!sp || !S.motion) return;
+    const up = TH.id === 'ocean';
+    for (let i = 0; i < 14; i++) parts.push({ x: Math.random() * innerWidth, y: Math.random() * innerHeight, z: 16 + Math.random() * 18, v: (10 + Math.random() * 18) * (up ? -1 : 1), w: Math.random() * 6.28, f: Math.random() * sp.n, a: .45 + Math.random() * .4 });
+    pLast = 0; pRun = requestAnimationFrame(pTick);
+  }
+  function pTick(ts) {
+    pRun = 0; const sp = TH.spr && TH.spr.particle; if (!sp || !S.motion || !parts.length) return;
+    if (document.hidden || D) { pLast = ts; pRun = requestAnimationFrame(pTick); return; }   // paused while a tile is in the air, so dragging stays smooth
+    if (pLast && ts - pLast < 30) { pRun = requestAnimationFrame(pTick); return; }   // about 30 frames a second is plenty
+    const dt = Math.min(.1, (ts - (pLast || ts)) / 1000); pLast = ts;
+    bx.clearRect(0, 0, innerWidth, innerHeight);
+    parts.forEach(p => {
+      p.y += p.v * dt; p.w += dt * .8; p.f = (p.f + dt * 6) % sp.n; const x = p.x + Math.sin(p.w) * 14;
+      if (p.y > innerHeight + 40) p.y = -40; else if (p.y < -40) p.y = innerHeight + 40;
+      bx.globalAlpha = p.a; bx.drawImage(sp.img, (p.f | 0) * sp.w, 0, sp.w, sp.w, x - p.z / 2, p.y - p.z / 2, p.z, p.z);
+    });
+    bx.globalAlpha = 1; pRun = requestAnimationFrame(pTick);
+  }
+  function shot(k, x, y, size, fps) { const sp = TH.spr && TH.spr[k]; if (!sp || !S.motion || SIM) return; shots.push({ sp, x, y, size, fps, t0: 0 }); if (!sRun) sRun = requestAnimationFrame(sTick); }
+  function sTick(ts) {
+    sRun = 0; tx.clearRect(0, 0, innerWidth, innerHeight);
+    shots = shots.filter(o => { if (!o.t0) o.t0 = ts; const f = Math.floor((ts - o.t0) / 1000 * o.fps); if (f >= o.sp.n) return false; tx.drawImage(o.sp.img, f * o.sp.w, 0, o.sp.w, o.sp.w, o.x - o.size / 2, o.y - o.size / 2, o.size, o.size); return true; });
+    if (shots.length) sRun = requestAnimationFrame(sTick);
+  }
+  function dropFx(r, c) {
+    playSnd('drop');
+    const b = cv.getBoundingClientRect(); shot('pop', b.left + view.x + (c + .5) * view.s, b.top + view.y + (r + .5) * view.s, Math.max(46, view.s * 2.4), 26);
+    setTimeout(() => { if (lastBadAt > Date.now() - 400 && Date.now() - lastBad > 1500) { lastBad = Date.now(); playSnd('bad', .45); } }, 30);
+  }
+  function burst() { const b = cv.getBoundingClientRect(); shot('burst', b.left + b.width / 2, b.top + b.height / 2, b.width * .8, 14); }
+  setInterval(() => {   // centre piece: a short animation about every 6 seconds while the centre square is empty
+    const an = TH.spr && TH.spr.stAnim; if (!an || !S.motion || document.hidden || !G || D || occ(MID, MID)) return;
+    let f = 0; const step = () => { TH.stF = ++f; dirty = true; kick(); if (f < an.n) setTimeout(step, 110); else { TH.stF = 0; dirty = true; kick(); } }; step();
+  }, 6000);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) stopMusic(); else startMusic(); });
+
   // ---------- board drawing: one canvas, redrawn only when something changes ----------
-  const LKS = [.56, .61, .66], PKS = [.22, .25, .28];
+  const LKS = [.56, .62, .68, .74, .8], PKS = [.22, .25, .28];
   const KIND = { T: 'tw', D: 'dw', t: 'tl', d: 'dl', '*': 'st' }, FONT = 'system-ui,-apple-system,"Segoe UI",Roboto,sans-serif', MID = N >> 1;
   function rr(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
   function drawTile(x, y, s, L, P, blank, ring) {
@@ -395,7 +492,7 @@
     }
     if (ring) { ctx.strokeStyle = ring; ctx.lineWidth = Math.max(1.5, s * .07); rr(x + s * .035, y + s * .035, s * .93, s * .93, s * .12); ctx.stroke(); }
     ctx.fillStyle = blank ? '#b03a2e' : TH.pal.tileInk; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-    const lk = LKS[S.lsz] || .56; ctx.font = '800 ' + (s * lk) + 'px ' + FONT; ctx.fillText(L, x + s * (.5 - lk * .06), y + s * (.47 + lk * .35));
+    const lk = LKS[S.lsz] || .56; ctx.font = '800 ' + (s * lk) + 'px ' + FONT; ctx.fillText(L, x + s * (.466 - (lk - .56) * .35), y + s * (.47 + lk * .35));   // bigger letters move left, clear of the points
     if (P !== '') { ctx.textAlign = 'right'; ctx.font = '800 ' + (s * (PKS[S.psz] || .22)) + 'px ' + FONT; ctx.fillText(P, x + s * .9, y + s * .86); }
   }
   function drawBubble(b) {
@@ -440,7 +537,8 @@
       }
     }
     if (TH.orn && !occ(MID, MID)) {   // large centre piece: over the squares, under every tile, hidden once the centre is used
-      const z = s * (TH.lay.centerScale || 1); ctx.drawImage(TH.img.st, view.x + (MID + .5) * s - z / 2, view.y + (MID + .5) * s - z / 2, z, z);
+      const z = s * (TH.lay.centerScale || 1), x0 = view.x + (MID + .5) * s - z / 2, y0 = view.y + (MID + .5) * s - z / 2, an = TH.spr && TH.spr.stAnim;
+      if (an && S.motion && TH.stF) ctx.drawImage(an.img, (TH.stF % an.n) * an.w, 0, an.w, an.w, x0, y0, z, z); else ctx.drawImage(TH.img.st, x0, y0, z, z);
     }
     const lastKey = G.lastWho === 1 ? new Set(G.last.map(q => q[0] * N + q[1])) : null;
     for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
@@ -454,8 +552,8 @@
       ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.strokeRect(x + 3.5, y + 3.5, s - 7, s - 7);
     }
     if (D && D.tgt && D.tgt.cells) {   // a lifted word: its landing squares, blue when it scores, red when it does not
-      const ring = hov && hov.kind === 'hov' ? '#2E8BFF' : '#e0453f'; ctx.globalAlpha = .85;
-      D.tgt.cells.forEach((q, i) => { const t = D.grp[i]; drawTile(view.x + q.c * s, view.y + q.r * s, s, letter(t), t.ch === '?' ? '' : C.values[t.ch], t.ch === '?', ring); });
+      const ring = !D.tgt.bad && hov && hov.kind === 'hov' ? '#2E8BFF' : '#e0453f'; ctx.globalAlpha = .85;
+      D.tgt.cells.forEach((q, i) => { if (!q) return; const t = D.grp[i]; drawTile(view.x + q.c * s, view.y + q.r * s, s, letter(t), t.ch === '?' ? '' : C.values[t.ch], t.ch === '?', ring); });
       ctx.globalAlpha = 1;
     }
     if (D && hov) { bubs.forEach(b => { if (b.kind === 'cmp') drawBubble(b); }); drawBubble(hov); } else bubs.forEach(drawBubble);   // bubbles last: always on top
@@ -514,7 +612,7 @@
       const tray = t.where, i = tray.items.indexOf(t), b = el.getBoundingClientRect();
       cx = b.left + b.width / 2; cy = b.top + b.height / 2; sz = tray.sw; tray.items[i] = null; origin = { tray, i };
     }
-    t.where = null; el.style.transition = 'none'; el.classList.add('ghost'); el.style.setProperty('--sz', '64px'); document.body.appendChild(el);
+    t.where = null; playSnd('pick'); el.style.transition = 'none'; el.classList.add('ghost'); el.style.setProperty('--sz', '64px'); document.body.appendChild(el);
     D = { t, id: p.id, touch: p.ptype !== 'mouse', x: e.clientX, y: e.clientY, ox: cx - e.clientX, oy: cy - e.clientY, lift: 0, sz, origin, tgt: null, key: '',
           cvR: cv.getBoundingClientRect(), rackR: rack.box.getBoundingClientRect(), scrR: scrOn() ? scr.box.getBoundingClientRect() : null };
     el.style.transform = 'translate3d(' + (cx - 32) + 'px,' + (cy - 32) + 'px,0) scale(' + (sz / 64) + ')';
@@ -581,65 +679,86 @@
   }
   // Hold a tile in the scratch row: the run of touching tiles lifts as one piece, held by the tile under the finger.
   // It does not have to be a word. On the board its letters skip squares that are already filled.
+  function liftGroup(p, grp, gi, origin) {
+    clearSel(); clearTimeout(zoomT); HL = null;
+    const box = document.createElement('div'); box.className = 'wghost';
+    grp.forEach(x => { x.where = null; x.el.classList.remove('sel', 'ghost'); x.el.style.transition = 'none'; box.appendChild(x.el); });
+    document.body.appendChild(box);
+    D = { t: grp[gi], grp, gi, box, id: p.id, touch: p.ptype !== 'mouse', x: p.x0, y: p.y0, lift: 0, g: 0, gv: null, tgt: null, key: '-', origin,
+          cvR: cv.getBoundingClientRect(), rackR: rack.box.getBoundingClientRect(), scrR: scrOn() ? scr.box.getBoundingClientRect() : null };
+    evaluate(); scFeedback(); buzz(18); playSnd('pick'); groupFrame(16); kick();
+  }
+  // Hold a tile in the scratch row: the run of touching tiles lifts as one piece, held by the tile under the finger.
+  // It does not have to be a word. On the board its letters skip squares that are already filled.
   function startWord(p) {
     const t = p.t, i = scr.items.indexOf(t); if (i < 0) return;
     let lo = i, hi = i; while (lo > 0 && scr.items[lo - 1]) lo--; while (hi < scr.n - 1 && scr.items[hi + 1]) hi++;
     if (lo === hi) { startDrag(p, { clientX: p.x0, clientY: p.y0 }); return; }
-    clearSel(); clearTimeout(zoomT); HL = null;
-    const grp = scr.items.slice(lo, hi + 1), idx = grp.map((x, k) => lo + k), box = document.createElement('div'); box.className = 'wghost';
-    grp.forEach((x, k) => { scr.items[lo + k] = null; x.where = null; x.el.classList.remove('sel'); x.el.style.transition = 'none'; box.appendChild(x.el); });
-    document.body.appendChild(box);
-    D = { t, grp, gi: i - lo, idx, box, id: p.id, touch: p.ptype !== 'mouse', x: p.x0, y: p.y0, lift: 0, g: 0, tgt: null, key: '-', origin: { tray: scr },
-          cvR: cv.getBoundingClientRect(), rackR: rack.box.getBoundingClientRect() };
-    evaluate(); scFeedback(); buzz(18); groupFrame(16); say('Word lifted. Drag it to the board.'); kick();
+    const grp = scr.items.slice(lo, hi + 1), idx = grp.map((x, k) => lo + k);
+    grp.forEach((x, k) => { scr.items[lo + k] = null; });
+    liftGroup(p, grp, i - lo, { tray: scr, idx });
+    say('Word lifted. Drag it to the board.');
+  }
+  // A word dropped on the board stays one piece until Play or Recall: dragging any of its tiles moves them all.
+  function startBoardGroup(p, e) {
+    const g = p.t.g, grp = g.tiles.filter(x => placed.includes(x)), gi = grp.indexOf(p.t);
+    const cells = grp.map(x => ({ r: x.r, c: x.c }));
+    grp.forEach(x => placed.splice(placed.indexOf(x), 1));
+    liftGroup({ id: p.id, ptype: p.ptype, x0: e.clientX, y0: e.clientY }, grp, gi, { board: 1, g, cells });
   }
   function groupFrame(dt) {
     const d = D, k = Math.min(1, dt / 55), v = S.dir === 'v', n = d.grp.length;
-    const u = d.rackR.top - 6 - d.y, ramp = Math.max(0, Math.min(1, u / Math.max(1, S.lift * .8)));
-    d.lift += ((d.touch ? S.lift * (.35 + .65 * ramp) : 0) - d.lift) * k;
-    const g = Math.round(Math.max(26, Math.min(64, view.s * S.gs / 100)));
-    if (g !== d.g) {   // tiles line up along the chosen direction, with the held tile at the finger
-      d.g = g;
+    const u = d.rackR.top - 6 - d.y, ramp = Math.max(0, Math.min(1, u / Math.max(1, S.wlift * .8 + 1)));
+    d.lift += ((d.touch ? S.wlift * (.3 + .7 * ramp) : 0) - d.lift) * k;
+    const g = Math.round(Math.max(22, view.s));   // the floating word is exactly square size, so it lines up with where it will land
+    if (g !== d.g || v !== d.gv) {
+      d.g = g; d.gv = v;
       d.grp.forEach((t, j) => { const o = (j - d.gi) * g; t.el.style.setProperty('--sz', g + 'px'); t.el.style.transform = 'translate3d(' + ((v ? 0 : o) - g / 2) + 'px,' + ((v ? o : 0) - g / 2) + 'px,0)'; });
     }
     const cx = d.x, cy = d.y - d.lift;
     d.box.style.transform = 'translate3d(' + cx + 'px,' + cy + 'px,0)';
     let nt = null;
-    if (inR(cx, cy, d.cvR, 0)) {
+    const overTray = inR(d.x, d.y, d.rackR, 6) || (d.scrR && inR(d.x, d.y, d.scrR, 6));
+    if (overTray) nt = { back: 1 };
+    else if (inR(cx, cy, d.cvR, 0)) {
       edgePan(cx, cy, dt);
       const fx = (cx - d.cvR.left - view.x) / view.s, fy = (cy - d.cvR.top - view.y) / view.s;
       let q = { r: Math.floor(fy), c: Math.floor(fx) };
       const o = d.tgt && d.tgt.a;
       if (o && fx > o.c - .15 && fx < o.c + 1.15 && fy > o.r - .15 && fy < o.r + 1.15) q = o;
-      if (q.r >= 0 && q.c >= 0 && q.r < N && q.c < N && !occ(q.r, q.c)) {
-        const cells = Array(n), dr = v ? 1 : 0, dc = v ? 0 : 1; cells[d.gi] = q; let ok = true, r = q.r, c = q.c;
-        for (let j = d.gi + 1; j < n && ok; j++) { do { r += dr; c += dc; } while (r < N && c < N && occ(r, c)); if (r >= N || c >= N) ok = false; else cells[j] = { r, c }; }
+      q.r = Math.max(0, Math.min(N - 1, q.r)); q.c = Math.max(0, Math.min(N - 1, q.c));
+      if (!occ(q.r, q.c)) {
+        const cells = Array(n).fill(null), dr = v ? 1 : 0, dc = v ? 0 : 1; cells[d.gi] = q; let ok = true, r = q.r, c = q.c;
+        for (let j = d.gi + 1; j < n; j++) { do { r += dr; c += dc; } while (r < N && c < N && occ(r, c)); if (r >= N || c >= N) { ok = false; break; } cells[j] = { r, c }; }
         r = q.r; c = q.c;
-        for (let j = d.gi - 1; j >= 0 && ok; j--) { do { r -= dr; c -= dc; } while (r >= 0 && c >= 0 && occ(r, c)); if (r < 0 || c < 0) ok = false; else cells[j] = { r, c }; }
-        if (ok) nt = { a: q, cells };
+        for (let j = d.gi - 1; j >= 0; j--) { do { r -= dr; c -= dc; } while (r >= 0 && c >= 0 && occ(r, c)); if (r < 0 || c < 0) { ok = false; break; } cells[j] = { r, c }; }
+        nt = { a: q, cells, bad: !ok };
       }
     }
-    const key = nt ? 'w' + nt.a.r + ',' + nt.a.c : '';
+    const key = !nt ? '' : nt.back ? 'back' : 'w' + nt.a.r + ',' + nt.a.c + (nt.bad ? 'x' : '');
     if (key === d.key) return;
+    scr.box.classList.toggle('hot', !!nt && !!nt.back);
     d.tgt = nt; d.key = key; hov = null; dirty = true;
-    if (!nt) { say(inR(cx, cy, d.cvR, 0) ? 'No room for the word here.' : 'Let go here and the word goes back.'); return; }
+    if (!nt) { say(inR(cx, cy, d.cvR, 0) ? 'That square is taken.' : 'Let go here and the word goes back.'); return; }
+    if (nt.back) { say('Let go to put the word back in the scratch row.'); return; }
+    if (nt.bad) { say('The word does not fit here: it runs off the board.'); return; }
     buzz(5); hoverEval(d.grp.map((t, j) => ({ r: nt.cells[j].r, c: nt.cells[j].c, ch: letter(t) || '?', bl: t.ch === '?' })));
   }
   function drop(cancelled) {
     const d = D, t = d.t; D = null; hov = null;
     rack.box.classList.remove('hot'); scr.box.classList.remove('hot');
     if (d.grp) {
-      const g = d.tgt;
-      if (!cancelled && g) {
-        const first = !placed.length;
-        d.grp.forEach((x, j) => { x.el.remove(); x.el.style.transition = ''; x.where = 'board'; x.r = g.cells[j].r; x.c = g.cells[j].c; placed.push(x); });
-        d.box.remove(); buzz(15); HL = null; clearTimeout(zoomT);
+      const g = d.tgt, o = d.origin;
+      d.grp.forEach(x => { x.el.remove(); x.el.style.transition = ''; });
+      d.box.remove();
+      const putAt = cells => { const gr = o.g || { tiles: [] }; gr.tiles = d.grp.slice(); d.grp.forEach((x, j) => { x.where = 'board'; x.r = cells[j].r; x.c = cells[j].c; x.g = gr; placed.push(x); }); };
+      if (!cancelled && g && g.a && !g.bad) {
+        const first = !placed.length; putAt(g.cells); buzz(15); HL = null; clearTimeout(zoomT); dropFx(g.a.r, g.a.c);
         if (first && fit * S.zoom / 100 > view.s * 1.05) zoomT = setTimeout(() => zoomTo(g.a.r, g.a.c, fit * S.zoom / 100), 160);
         moved();
-      } else {
-        d.grp.forEach((x, j) => { const i = d.idx[j]; if (!scr.items[i]) intoTray(scr, x, i); else home(x); });
-        d.box.remove(); moved(); say('The word went back to the scratch row.');
-      }
+      } else if (!cancelled && g && g.back) { sendBack(d.grp); moved(); say('The word went back to the scratch row.'); }
+      else if (o.board) { putAt(o.cells); moved(); say('Missed: the word stayed where it was.'); }
+      else { d.grp.forEach((x, j) => { const i = o.idx[j]; if (!scr.items[i]) intoTray(scr, x, i); else home(x); }); moved(); say('The word went back to the scratch row.'); }
       dirty = true; kick(); return;
     }
     const cx = d.x + d.ox, cy = d.y + d.oy - d.lift, g = d.tgt;
@@ -695,7 +814,7 @@
   cv.addEventListener('pointercancel', e => endPtr(e, true));
   cv.addEventListener('wheel', e => { e.preventDefault(); const r = cv.getBoundingClientRect(); zoomAt(e.clientX - r.left, e.clientY - r.top, e.deltaY < 0 ? 1.15 : .87); }, { passive: false });
   window.addEventListener('pointermove', e => {
-    if (P && e.pointerId === P.id && P.kind === 'tile' && Math.hypot(e.clientX - P.x0, e.clientY - P.y0) > 7) { const p = P; P = null; clearTimeout(p.lp); if (!locked()) startDrag(p, e); return; }
+    if (P && e.pointerId === P.id && P.kind === 'tile' && Math.hypot(e.clientX - P.x0, e.clientY - P.y0) > 7) { const p = P; P = null; clearTimeout(p.lp); if (!locked()) { if (p.t.where === 'board' && p.t.g) startBoardGroup(p, e); else startDrag(p, e); } return; }
     if (D && e.pointerId === D.id) { D.x = e.clientX; D.y = e.clientY; kick(); }
   });
   window.addEventListener('pointerup', e => {
@@ -710,6 +829,7 @@
   function tapTile(t) {
     if (t.where === 'board') {   // a tile placed this turn: a tap sends it back to the hand
       if (sel) { say('That square is taken.'); return; }
+      if (t.g) { sendBack(t.g.tiles.filter(x => placed.includes(x))); moved(); say('The word went back to the scratch row.'); return; }
       placed.splice(placed.indexOf(t), 1); home(t); moved(); return;
     }
     const now = Date.now();
@@ -750,7 +870,9 @@
   function startNew() { newGame(); ['end', 'set', 'menu'].forEach(close); busy = !E.ready; view = { s: fit, x: 0, y: 0 }; refresh(); if (E.ready && G.turn === 1) computerTurn(); }
   $('bPlay').onclick = () => {
     if (locked() || G.turn !== 0 || !cur || D) return;
-    const r = cur; commitMove(0, pcells(), r); msg = 'You played ' + r.words[0].w + ' for ' + r.total + '.'; buzz(20); zoomFit(); afterHuman();
+    const r = cur; commitMove(0, pcells(), r); msg = 'You played ' + r.words[0].w + ' for ' + r.total + '.'; buzz(20);
+    if (r.bingo) { playSnd('bingo'); burst(); } else playSnd('play');
+    zoomFit(); afterHuman();
   };
   $('bRecall').onclick = () => { if (locked() || D) return; recallAll(); zoomFit(); moved(); };
   $('bShuffle').onclick = () => { if (locked() || D) return; clearSel(); const ts = shuf(rack.items.filter(Boolean)); while (ts.length < rack.n) ts.push(null); rack.items = ts; layout(rack); saveSoon(); };
@@ -842,7 +964,8 @@
     close('menu');
     $('sTheme').value = S.theme; $('sMode').value = S.mode; $('sFirst').value = S.first; $('sLevel').value = S.level; $('sZoom').value = S.zoom;
     $('sRare').checked = S.noRare; $('hBal').checked = S.hBal; $('hDup').checked = S.hDup; $('hHard').checked = S.hHard; $('sBagOn').checked = S.showBag; $('sScr').checked = S.scratch; $('sHap').checked = S.hap;
-    $('sLsz').value = S.lsz; $('sPsz').value = S.psz;
+    $('sLsz').value = S.lsz; $('sPsz').value = S.psz; $('sSym').value = S.sym; $('sSfx').checked = S.sfx; $('sMus').checked = S.music; $('sMot').checked = S.motion;
+    $('sWl').value = S.wlift; $('vWl').textContent = S.wlift + ' px';
     $('sLift').value = S.lift; $('vLift').textContent = S.lift + ' px'; $('lScr').style.display = C.scratch === false ? 'none' : '';
     open('set');
   };
@@ -851,6 +974,11 @@
   $('sMode').onchange = e => { S.mode = e.target.value; save(); setTheme(S.theme); };
   [['sFirst', 'first'], ['sLevel', 'level']].forEach(([id, k]) => { $(id).onchange = e => { S[k] = e.target.value; save(); }; });
   $('sZoom').onchange = e => { S.zoom = +e.target.value; save(); };
+  $('sWl').oninput = e => { S.wlift = +e.target.value; $('vWl').textContent = S.wlift + ' px'; saveSoon(); };
+  $('sSym').onchange = e => { S.sym = e.target.value; save(); setTheme(S.theme); };
+  $('sSfx').onchange = e => { S.sfx = e.target.checked; save(); if (S.sfx) { audio(); playSnd('drop'); } };
+  $('sMus').onchange = e => { S.music = e.target.checked; save(); audio(); if (S.music) setTimeout(startMusic, 60); else stopMusic(); };
+  $('sMot').onchange = e => { S.motion = e.target.checked; save(); particles(); dirty = true; kick(); };
   $('sLsz').onchange = e => { S.lsz = +e.target.value; applySettings(); save(); };
   $('sPsz').onchange = e => { S.psz = +e.target.value; applySettings(); save(); };
   $('sLift').oninput = e => { S.lift = +e.target.value; $('vLift').textContent = S.lift + ' px'; saveSoon(); };
@@ -869,17 +997,20 @@
     $('dA').classList.toggle('on', S.dir !== 'v'); $('dD').classList.toggle('on', S.dir === 'v'); dirty = true; kick();
   }
   if (window.matchMedia) { const mq = matchMedia('(prefers-color-scheme: dark)'); const f = () => { if (S.mode === 'system' && TH.id) setTheme(S.theme, true); }; if (mq.addEventListener) mq.addEventListener('change', f); }
-  window.addEventListener('resize', relayout);
+  window.addEventListener('resize', () => { relayout(); sizeFx(); particles(); });
 
   // ---------- start ----------
   async function start() {
-    buildSlots(rack); buildSlots(scr);
+    buildSlots(rack); buildSlots(scr); sizeFx();
     if (!restore()) newGame();
     applySettings(); relayout(); view = { s: fit, x: 0, y: 0 }; evaluate();
     if (!(await setTheme(S.theme, true))) { S.theme = 'classic'; await setTheme('classic', true); }
     requestAnimationFrame(relayout);
     fetch(BASE + 'themes/index.json').then(r => r.json()).catch(() => [{ id: 'classic', name: 'Classic' }]).then(l => {
       $('sTheme').innerHTML = l.map(t => '<option value="' + t.id + '">' + t.name + '</option>').join(''); $('sTheme').value = S.theme;
+    });
+    fetch(BASE + 'art/squares/index.json').then(r => r.json()).catch(() => []).then(l => {
+      $('sSym').innerHTML = '<option value="theme">From the theme</option>' + l.map(t => '<option value="' + t.id + '">' + t.name + ' set</option>').join(''); $('sSym').value = S.sym;
     });
     loadDict();
     try { if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost') && C.sw !== false) navigator.serviceWorker.register('sw.js').catch(() => {}); } catch (e) {}
