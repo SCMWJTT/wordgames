@@ -16,7 +16,7 @@
   // ---------- page ----------
   document.title = C.name;
   document.body.insertAdjacentHTML('afterbegin',
-    '<div id="appbg"></div><div id="scene"></div><canvas id="fxb"></canvas><canvas id="fxt"></canvas><div id="app">' +
+    '<div id="appbg"></div><div id="tbg"></div><div id="scene"></div><canvas id="fxb"></canvas><canvas id="fxt"></canvas><div id="app">' +
     '<div id="top"><img id="logo" alt="" src="' + ART + (C.logo || 'logo-wordgames.svg') + '"><div id="title"></div>' +
       '<div id="sbox"><div class="sc" id="sc0"><span><i class="dt"></i>You</span><b id="s0">0</b></div><div class="sc cp" id="sc1"><span><i class="dt"></i>Computer</span><b id="s1">0</b></div>' +
       '<button id="bagi" aria-label="Unseen tiles"><div class="sc"><span>Bag</span><b id="bagn">0</b></div><img id="bagimg" alt="" src="' + ART + 'bag.svg"></button></div></div>' +
@@ -71,7 +71,7 @@
   let G = null, placed = [], sel = null, P = null, D = null, cur = null, bubs = [], hov = null, pickT = null, msg = '', busy = true, HL = null, saveT = 0, SIM = null, lastTT = { t: null, at: 0 }, pickAt = 0;
   const rack = { el: $('rack'), box: $('rackBox'), items: [], n: C.rackSize, sw: 0, off: 0, name: 'rack' };
   const scr  = { el: $('scr'),  box: $('scrBox'),  items: [], n: C.rackSize, sw: 0, off: 0, name: 'scratch row' };
-  const cv = $('cv'), ctx = cv.getContext('2d');
+  const cv = $('cv'), ctx0 = cv.getContext('2d'); let ctx = ctx0;
   let W = 300, dpr = 1, fit = 20, view = { s: 20, x: 0, y: 0 }, dirty = true, tween = null, rafId = 0, lastTs = 0, zoomT = 0;
 
   const say = m => { $('status').textContent = m; };
@@ -348,7 +348,7 @@
   let themeTok = 0;
   async function setTheme(id, quiet) {   // loads everything needed first, then switches in one go; a failure keeps the current look
     const tok = ++themeTok, mode = curMode(), A = {}, cdir = BASE + 'themes/classic/';
-    let pal, ink, fx, lay, name = 'Classic', base = null, scn = null;
+    let pal, ink, fx, lay, name = 'Classic', base = null, scn = null, bt = null;
     const SND = {}, SPR = {};
     const put = (m, dir) => { Object.keys(m.sounds || {}).forEach(k => { SND[k] = dir + m.sounds[k]; }); Object.keys(m.sprites || {}).forEach(k => { SPR[k] = dir + m.sprites[k]; }); Object.keys(m.assets || {}).forEach(k => { A[k] = dir + m.assets[k]; }); const ma = (m.modes[mode] || {}).assets || {}; Object.keys(ma).forEach(k => { A[k] = dir + ma[k]; }); };
     try {
@@ -359,6 +359,7 @@
       if (id !== 'classic') {
         const t = await manifest(id), tm = t.modes[mode] || t.modes.light || {};
         put(t, BASE + 'themes/' + id + '/'); name = t.name || id; scn = t.scene ? { def: t.scene, dir: BASE + 'themes/' + id + '/', id } : null;
+        bt = t.board ? Object.assign({ dir: BASE + 'themes/' + id + '/' }, t.board) : null;
         Object.assign(pal, tm.palette || {}); Object.assign(ink, (tm.palette || {}).premiumInk || {}); Object.assign(fx, t.effects || {}, tm.effects || {}); Object.assign(lay, t.layout || {});
       }
     } catch (e) {
@@ -377,6 +378,7 @@
       try { img[k] = await loadImg(A[k]); }
       catch (e) { try { A[k] = cdir + base.assets[k]; img[k] = await loadImg(A[k]); if (k === 'st') lay.centerScale = 1; } catch (e2) { img[k] = null; A[k] = ''; } }
     }));
+    if (bt) { try { bt.img = await loadImg(bt.dir + bt.image); } catch (e) { bt = null; } }
     if (tok !== themeTok) return false;
     const b = document.body, st = b.style;
     ['page', 'panel', 'text', 'muted', 'plain', 'grid', 'accent', 'icon', 'tileInk'].forEach(k => st.setProperty('--' + k, pal[k]));
@@ -387,8 +389,8 @@
     const wall = A.wallpaper && fx.wallpaperOpacity > 0;
     $('appbg').style.backgroundImage = wall ? 'url("' + A.wallpaper + '")' : 'none'; $('appbg').style.opacity = wall ? fx.wallpaperOpacity : 0; b.classList.toggle('wall', !!wall);
     const mt = document.querySelector('meta[name=theme-color]'); if (mt) mt.content = pal.page;
-    buildScene(scn);
-    Object.assign(TH, { id, mode, pal, fx, lay, img, tint: {}, bmp: null, bmpKey: 0, pat: null, pad: A.frame ? 10 : 5, orn: !!img.st && (!/\.svg$/i.test(A.st) || lay.centerScale > 1) });
+    buildScene(scn); boardTheme(bt);
+    Object.assign(TH, { ver: (TH.ver || 0) + 1, bt, id, mode, pal, fx, lay, img, tint: {}, bmp: null, bmpKey: 0, pat: null, pad: bt ? 4 : A.frame ? 10 : 5, orn: !!img.st && (!/\.svg$/i.test(A.st) || lay.centerScale > 1) });
     relayout();
     TH.spr = {}; TH.stF = 0;
     Object.keys(SPR).forEach(k => loadImg(SPR[k]).then(i => { if (tok === themeTok) { TH.spr[k] = { img: i, n: Math.max(1, Math.round(i.width / i.height)), w: i.height }; if (k === 'particle') particles(); } }).catch(() => {}));
@@ -508,6 +510,35 @@
   }
   document.addEventListener('visibilitychange', sceneMotion);
 
+  // ---------- board themes: a painted board picture, with a matching background lined up around it ----------
+  function boardTheme(bt) {
+    const b = document.body; b.classList.toggle('btheme', !!bt);
+    const st = b.style;
+    if (!bt) { $('tbg').style.backgroundImage = 'none'; return; }
+    st.setProperty('--fr1', (bt.frame || [])[0] || '#d9b36c'); st.setProperty('--fr2', (bt.frame || [])[1] || '#9c7a3c');
+    st.setProperty('--pa', Math.round((bt.panelAlpha == null ? .85 : bt.panelAlpha) * 100) + '%');
+    const t = $('tbg'); t.style.backgroundColor = bt.edge || ''; t.style.backgroundImage = bt.background ? 'url("' + bt.dir + bt.background + '")' : 'none';
+    requestAnimationFrame(placeBg);
+  }
+  function placeBg() {   // scales and shifts the background so its board area sits exactly behind the board on this screen
+    const bt = TH.bt; if (!bt || !bt.background) return;
+    const r = cv.getBoundingClientRect(), [bx, by, bsz] = bt.bgBoard, [bw, bh] = bt.bgSize, k = r.width / bsz, t = $('tbg').style;
+    t.backgroundSize = (bw * k) + 'px ' + (bh * k) + 'px'; t.backgroundPosition = (r.left - bx * k) + 'px ' + (r.top - by * k) + 'px';
+  }
+  function paintedSquare(x, y, s, col) {   // a raised, slightly glossy square: lighter top, darker edge
+    const m = Math.max(1.2, s * .05), w = s - 2 * m, rad = Math.min(5, s * .16);
+    ctx.fillStyle = 'rgba(0,0,0,.18)'; rr(x + m, y + m + s * .03, w, w, rad); ctx.fill();
+    const g = ctx.createLinearGradient(0, y + m, 0, y + m + w); g.addColorStop(0, shade(col, .22)); g.addColorStop(.55, col); g.addColorStop(1, shade(col, -.18));
+    ctx.fillStyle = g; rr(x + m, y + m, w, w, rad); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.45)'; ctx.lineWidth = Math.max(1, s * .04); rr(x + m + s * .04, y + m + s * .04, w - s * .08, w - s * .08, rad * .7); ctx.stroke();
+  }
+  const shadeC = {};
+  function shade(h, a) {   // lighten (a > 0) or darken (a < 0) a colour
+    const key = h + a; if (shadeC[key]) return shadeC[key];
+    const n = parseInt(h.slice(1), 16), f = v => Math.round(a > 0 ? v + (255 - v) * a : v * (1 + a));
+    return shadeC[key] = 'rgb(' + f(n >> 16) + ',' + f((n >> 8) & 255) + ',' + f(n & 255) + ')';
+  }
+
   // ---------- board drawing: one canvas, redrawn only when something changes ----------
   const LKS = [.56, .62, .68, .74, .8], PKS = [.22, .25, .28];
   const KIND = { T: 'tw', D: 'dw', t: 'tl', d: 'dl', '*': 'st' }, FONT = 'system-ui,-apple-system,"Segoe UI",Roboto,sans-serif', MID = N >> 1;
@@ -535,29 +566,43 @@
     rr(bx, by, pw, ph, 9.5); ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
     ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(b.text, bx + pw / 2, by + ph / 2 + .5);
   }
+  const base = document.createElement('canvas'), bctx = base.getContext('2d'); let baseKey = '';
   function draw() {
     dirty = false; const s = view.s, p = TH.pal, fx = TH.fx, bs = N * s;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     const see = SC.on ? Math.max(0, Math.min(.4, S.see / 100)) : 0;
+    const key = [view.s, view.x, view.y, W, dpr, see, TH.id, TH.mode, S.sym, !!TH.img.art, !!TH.img.surf, TH.ver].join('|');
+    if (key !== baseKey) {   // only when zoom, pan, size or theme changed; a drag reuses the cached picture
+      baseKey = key; if (base.width !== cv.width) { base.width = cv.width; base.height = cv.height; }
+      ctx = bctx; ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, base.width, base.height); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      drawBase(s, p, fx, bs, see); ctx = ctx0;
+    }
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cv.width, cv.height); ctx.drawImage(base, 0, 0);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    drawTop(s, p);
+  }
+  function drawBase(s, p, fx, bs, see) {
     if (see) { ctx.clearRect(0, 0, W, W); ctx.globalAlpha = 1 - see; }
-    ctx.fillStyle = p.plain; ctx.fillRect(0, 0, W, W);
-    if (TH.img.surf && fx.surfaceOpacity > 0) {   // repeating texture on the plain squares
+    if (TH.bt) { ctx.fillStyle = p.plain; ctx.fillRect(0, 0, W, W); ctx.drawImage(TH.bt.img, view.x, view.y, bs, bs); }
+    else { ctx.fillStyle = p.plain; ctx.fillRect(0, 0, W, W); }
+    if (!TH.bt && TH.img.surf && fx.surfaceOpacity > 0) {   // repeating texture on the plain squares
       if (!TH.pat) TH.pat = ctx.createPattern(TH.img.surf, 'repeat');
       const q = (128 / TH.img.surf.width) * (s / fit);
       ctx.save(); ctx.globalAlpha = fx.surfaceOpacity; ctx.translate(view.x, view.y); ctx.scale(q, q); ctx.fillStyle = TH.pat; ctx.fillRect(0, 0, bs / q, bs / q); ctx.restore();
     }
-    if (TH.img.art && fx.boardArtOpacity > 0) { ctx.globalAlpha = fx.boardArtOpacity * (1 - see); ctx.drawImage(TH.img.art, view.x, view.y, bs, bs); }
+    if (!TH.bt && TH.img.art && fx.boardArtOpacity > 0) { ctx.globalAlpha = fx.boardArtOpacity * (1 - see); ctx.drawImage(TH.img.art, view.x, view.y, bs, bs); }
     ctx.globalAlpha = 1;
     const c0 = Math.max(0, Math.floor(-view.x / s)), c1 = Math.min(N - 1, Math.floor((W - view.x) / s)), r0 = Math.max(0, Math.floor(-view.y / s)), r1 = Math.min(N - 1, Math.floor((W - view.y) / s));
+    if (TH.bt) ctx.globalAlpha = TH.bt.grid == null ? .35 : TH.bt.grid;
     ctx.strokeStyle = p.grid; ctx.lineWidth = 1; ctx.beginPath();
     for (let i = c0; i <= c1 + 1; i++) { const x = Math.round(view.x + i * s) + .5; ctx.moveTo(x, 0); ctx.lineTo(x, W); }
     for (let i = r0; i <= r1 + 1; i++) { const y = Math.round(view.y + i * s) + .5; ctx.moveTo(0, y); ctx.lineTo(W, y); }
-    ctx.stroke();
+    ctx.stroke(); ctx.globalAlpha = 1;
     const isz = s * (TH.lay.premiumIconScale || .82);
     for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
       const k = KIND[C.board[r][c]]; if (!k) continue;
       const x = view.x + c * s, y = view.y + r * s, cx = x + s / 2, cy = y + s / 2;
-      ctx.fillStyle = p[k]; rr(x + 1.5, y + 1.5, s - 2, s - 2, Math.min(4, s * .12)); ctx.fill();
+      if (k === 'st' && TH.bt && TH.bt.centreInPicture) continue;   // the picture's centre artwork is the centre square
+      if (TH.bt) paintedSquare(x, y, s, p[k]); else { ctx.fillStyle = p[k]; rr(x + 1.5, y + 1.5, s - 2, s - 2, Math.min(4, s * .12)); ctx.fill(); }
       if (k === 'st' && TH.orn) continue;
       const im = tinted(k);
       if (im) ctx.drawImage(im, cx - isz / 2, cy - isz / 2, isz, isz);
@@ -569,6 +614,10 @@
         ctx.fill();
       }
     }
+    ctx.globalAlpha = 1;
+  }
+  function drawTop(s, p) {
+    const c0 = Math.max(0, Math.floor(-view.x / s)), c1 = Math.min(N - 1, Math.floor((W - view.x) / s)), r0 = Math.max(0, Math.floor(-view.y / s)), r1 = Math.min(N - 1, Math.floor((W - view.y) / s));
     if (TH.orn && !occ(MID, MID)) {   // large centre piece: over the squares, under every tile, hidden once the centre is used
       const z = s * (TH.lay.centerScale || 1), x0 = view.x + (MID + .5) * s - z / 2, y0 = view.y + (MID + .5) * s - z / 2, an = TH.spr && TH.spr.stAnim;
       if (an && S.motion && TH.stF) ctx.drawImage(an.img, (TH.stF % an.n) * an.w, 0, an.w, an.w, x0, y0, z, z); else ctx.drawImage(TH.img.st, x0, y0, z, z);
@@ -616,6 +665,7 @@
     W = Math.floor(Math.max(200, Math.min(availW, availH))); dpr = Math.min(3, window.devicePixelRatio || 1);
     cv.style.width = cv.style.height = W + 'px'; cv.width = cv.height = Math.round(W * dpr);
     fit = W / N; if (was) view.s = fit; clampView(view); dirty = true; kick();
+    requestAnimationFrame(placeBg);
   }
 
   // ---------- frame loop ----------

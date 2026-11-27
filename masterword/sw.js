@@ -1,6 +1,6 @@
 // Masterword service worker. Network first, so an update shows as soon as it is published; the saved copy is used when offline.
 // Bump CACHE on every release.
-const CACHE = 'masterword-v4';
+const CACHE = 'masterword-v5';
 const FILES = ['./', 'config.js', 'manifest.json', 'icon-192.png', 'icon-512.png',
   '../core/core.css', '../core/engine.js', '../core/game.js', '../core/dev.js', '../core/enable.txt', '../core/common.txt', '../core/bad.txt',
   '../art/logo-masterword.svg', '../art/bag.svg', '../art/ic-play.svg', '../art/ic-recall.svg', '../art/ic-shuffle.svg', '../art/ic-swap.svg',

@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "id": "carnival-board",
+  "name": "Carnival board (picture test)",
+  "fallback": "classic",
+  "assets": {},
+  "board": {
+    "image": "board.webp",
+    "background": "bg.webp",
+    "bgSize": [
+      1440,
+      3200
+    ],
+    "bgBoard": [
+      100,
+      280,
+      1240
+    ],
+    "grid": 0.35,
+    "centreInPicture": true,
+    "frame": [
+      "#F2C14E",
+      "#B8862B"
+    ],
+    "panelAlpha": 0.84,
+    "edge": "#3C1A4C"
+  },
+  "modes": {
+    "light": {
+      "palette": {
+        "page": "#3C1A4C",
+        "panel": "#FFF6EC",
+        "text": "#3A1E3A",
+        "muted": "#7A5A72",
+        "plain": "#FBEBDD",
+        "grid": "#B88A86",
+        "tw": "#E23A4E",
+        "dw": "#F27DB2",
+        "tl": "#1F6FD6",
+        "dl": "#4FB3E6",
+        "st": "#F27DB2",
+        "accent": "#F6B93F",
+        "icon": "#3A1E3A",
+        "tileInk": "#292015",
+        "premiumInk": {
+          "tw": "#FFFFFF",
+          "dw": "#FFFFFF",
+          "tl": "#FFFFFF",
+          "dl": "#FFFFFF",
+          "st": "#FFFFFF"
+        }
+      }
+    },
+    "dark": {
+      "palette": {
+        "page": "#3C1A4C",
+        "panel": "#2E1838",
+        "text": "#F7E9F2",
+        "muted": "#D6BCD0",
+        "plain": "#FBEBDD",
+        "grid": "#B88A86",
+        "tw": "#E23A4E",
+        "dw": "#F27DB2",
+        "tl": "#1F6FD6",
+        "dl": "#4FB3E6",
+        "st": "#F27DB2",
+        "accent": "#F6B93F",
+        "icon": "#F7E9F2",
+        "tileInk": "#292015",
+        "premiumInk": {
+          "tw": "#FFFFFF",
+          "dw": "#FFFFFF",
+          "tl": "#FFFFFF",
+          "dl": "#FFFFFF",
+          "st": "#FFFFFF"
+        }
+      }
+    }
+  }
+}
