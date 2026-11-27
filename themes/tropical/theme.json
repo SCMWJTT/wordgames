@@ -5,8 +5,6 @@
   "fallback": "classic",
   "icon": "icon.png",
   "assets": {
-    "tile": "tile.svg",
-    "rack": "rack.svg",
     "tw": "tw.svg",
     "dw": "dw.svg",
     "tl": "tl.svg",

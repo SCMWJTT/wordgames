@@ -16,7 +16,7 @@
   // ---------- page ----------
   document.title = C.name;
   document.body.insertAdjacentHTML('afterbegin',
-    '<div id="appbg"></div><canvas id="fxb"></canvas><canvas id="fxt"></canvas><div id="app">' +
+    '<div id="appbg"></div><div id="scene"></div><canvas id="fxb"></canvas><canvas id="fxt"></canvas><div id="app">' +
     '<div id="top"><img id="logo" alt="" src="' + ART + (C.logo || 'logo-wordgames.svg') + '"><div id="title"></div>' +
       '<div id="sbox"><div class="sc" id="sc0"><span><i class="dt"></i>You</span><b id="s0">0</b></div><div class="sc cp" id="sc1"><span><i class="dt"></i>Computer</span><b id="s1">0</b></div>' +
       '<button id="bagi" aria-label="Unseen tiles"><div class="sc"><span>Bag</span><b id="bagn">0</b></div><img id="bagimg" alt="" src="' + ART + 'bag.svg"></button></div></div>' +
@@ -41,6 +41,7 @@
     '<div class="ov" id="set"><div class="box">' +
       '<h4>Look</h4><label>Theme<select id="sTheme"></select></label>' +
       '<label>Light or dark<select id="sMode"><option value="system">Same as the phone</option><option value="light">Light</option><option value="dark">Dark</option></select></label>' +
+      '<label id="lSee"><span>Board see-through (moving backgrounds): <b id="vSee"></b></span><input type="range" id="sSee" min="0" max="40" step="2"></label>' +
       '<label>Square symbols<select id="sSym"><option value="theme">From the theme</option></select></label>' +
       '<label>Letter size on the tiles<select id="sLsz"><option value="0">Normal</option><option value="1">Large</option><option value="2">Extra large</option><option value="3">Huge</option><option value="4">Biggest</option></select></label>' +
       '<label>Points size on the tiles<select id="sPsz"><option value="0">Normal</option><option value="1">Large</option><option value="2">Extra large</option></select></label>' +
@@ -66,7 +67,7 @@
 
   // ---------- state ----------
   let S = { theme: 'classic', mode: 'system', level: 'hard', first: 'random', lastFirst: 'computer', noRare: true, hBal: true, hDup: true, hHard: true, showBag: true,
-            scratch: true, lift: 48, gs: 125, zoom: 160, hap: true, dir: 'h', lsz: 0, psz: 0, wlift: 24, sym: 'theme', sfx: true, music: true, motion: !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) };
+            scratch: true, lift: 48, gs: 125, zoom: 160, hap: true, dir: 'h', lsz: 0, psz: 0, wlift: 24, see: 12, sym: 'theme', sfx: true, music: true, motion: !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) };
   let G = null, placed = [], sel = null, P = null, D = null, cur = null, bubs = [], hov = null, pickT = null, msg = '', busy = true, HL = null, saveT = 0, SIM = null, lastTT = { t: null, at: 0 }, pickAt = 0;
   const rack = { el: $('rack'), box: $('rackBox'), items: [], n: C.rackSize, sw: 0, off: 0, name: 'rack' };
   const scr  = { el: $('scr'),  box: $('scrBox'),  items: [], n: C.rackSize, sw: 0, off: 0, name: 'scratch row' };
@@ -347,7 +348,7 @@
   let themeTok = 0;
   async function setTheme(id, quiet) {   // loads everything needed first, then switches in one go; a failure keeps the current look
     const tok = ++themeTok, mode = curMode(), A = {}, cdir = BASE + 'themes/classic/';
-    let pal, ink, fx, lay, name = 'Classic', base = null;
+    let pal, ink, fx, lay, name = 'Classic', base = null, scn = null;
     const SND = {}, SPR = {};
     const put = (m, dir) => { Object.keys(m.sounds || {}).forEach(k => { SND[k] = dir + m.sounds[k]; }); Object.keys(m.sprites || {}).forEach(k => { SPR[k] = dir + m.sprites[k]; }); Object.keys(m.assets || {}).forEach(k => { A[k] = dir + m.assets[k]; }); const ma = (m.modes[mode] || {}).assets || {}; Object.keys(ma).forEach(k => { A[k] = dir + ma[k]; }); };
     try {
@@ -357,7 +358,7 @@
       fx = Object.assign({}, base.effects || {}, bm.effects || {}); lay = Object.assign({ centerScale: 1, premiumIconScale: .82 }, base.layout || {});
       if (id !== 'classic') {
         const t = await manifest(id), tm = t.modes[mode] || t.modes.light || {};
-        put(t, BASE + 'themes/' + id + '/'); name = t.name || id;
+        put(t, BASE + 'themes/' + id + '/'); name = t.name || id; scn = t.scene ? { def: t.scene, dir: BASE + 'themes/' + id + '/', id } : null;
         Object.assign(pal, tm.palette || {}); Object.assign(ink, (tm.palette || {}).premiumInk || {}); Object.assign(fx, t.effects || {}, tm.effects || {}); Object.assign(lay, t.layout || {});
       }
     } catch (e) {
@@ -386,6 +387,7 @@
     const wall = A.wallpaper && fx.wallpaperOpacity > 0;
     $('appbg').style.backgroundImage = wall ? 'url("' + A.wallpaper + '")' : 'none'; $('appbg').style.opacity = wall ? fx.wallpaperOpacity : 0; b.classList.toggle('wall', !!wall);
     const mt = document.querySelector('meta[name=theme-color]'); if (mt) mt.content = pal.page;
+    buildScene(scn);
     Object.assign(TH, { id, mode, pal, fx, lay, img, tint: {}, bmp: null, bmpKey: 0, pat: null, pad: A.frame ? 10 : 5, orn: !!img.st && (!/\.svg$/i.test(A.st) || lay.centerScale > 1) });
     relayout();
     TH.spr = {}; TH.stF = 0;
@@ -433,7 +435,7 @@
   }
   function stopMusic() { if (music) { try { music.stop(); } catch (e) {} music = null; } }
   // Phones only allow sound after a tap, so the first touch anywhere switches sound on.
-  window.addEventListener('pointerdown', () => { const was = AC && AC.state === 'running'; audio(); if (!was && AC) setTimeout(() => { if (!music) startMusic(); }, 60); }, { capture: true });
+  window.addEventListener('pointerdown', () => { if (SC.vid && SC.vid.paused && S.motion) sceneMotion(); const was = AC && AC.state === 'running'; audio(); if (!was && AC) setTimeout(() => { if (!music) startMusic(); }, 60); }, { capture: true });
 
   // ---------- movement: particles behind the game, bursts and sparkles in front ----------
   const fxb = $('fxb'), fxt = $('fxt'), bx = fxb.getContext('2d'), tx = fxt.getContext('2d');
@@ -478,6 +480,34 @@
   }, 6000);
   document.addEventListener('visibilitychange', () => { if (document.hidden) stopMusic(); else startMusic(); });
 
+  // ---------- moving background (scene): a looping video, or picture layers that the browser slides on its own ----------
+  // Nothing here runs per frame in JavaScript: video is decoded by the phone's hardware, and layers move by CSS animation.
+  const SC = { on: false, vid: null };
+  function buildScene(sc) {
+    const box = $('scene'); box.innerHTML = ''; SC.vid = null; SC.on = !!sc; document.body.classList.toggle('scene', !!sc);
+    if (!sc) return;
+    const d = sc.def, dir = sc.dir;
+    if (d.type === 'video') {
+      const v = document.createElement('video');
+      v.muted = true; v.loop = true; v.playsInline = true; v.autoplay = true; v.preload = 'auto'; v.setAttribute('muted', ''); v.setAttribute('playsinline', '');
+      if (d.poster) v.poster = dir + d.poster;
+      v.src = dir + d.file; box.appendChild(v); SC.vid = v;
+    } else (d.layers || []).forEach(l => {
+      const w = document.createElement('div'), inner = document.createElement('div');
+      w.className = 'sl' + (l.sway ? ' sway' : ''); if (l.sway) w.style.animationDuration = l.sway + 's';
+      inner.className = 'slin ' + (l.move || 'still'); inner.style.backgroundImage = 'url("' + dir + l.file + '")'; inner.style.animationDuration = (l.seconds || 60) + 's';
+      w.appendChild(inner); box.appendChild(w);
+    });
+    if (typeof d.boardSeeThrough === 'number' && S.seeTheme !== sc.id) { S.see = Math.round(d.boardSeeThrough * 100); }   // the theme's value, unless you moved the slider for this theme
+    sceneMotion();
+  }
+  function sceneMotion() {   // pause when movement is off or the app is hidden
+    const run = S.motion && !document.hidden;
+    document.body.classList.toggle('still', !run);
+    if (SC.vid) { if (run) { const pr = SC.vid.play(); if (pr && pr.catch) pr.catch(() => {}); } else SC.vid.pause(); }
+  }
+  document.addEventListener('visibilitychange', sceneMotion);
+
   // ---------- board drawing: one canvas, redrawn only when something changes ----------
   const LKS = [.56, .62, .68, .74, .8], PKS = [.22, .25, .28];
   const KIND = { T: 'tw', D: 'dw', t: 'tl', d: 'dl', '*': 'st' }, FONT = 'system-ui,-apple-system,"Segoe UI",Roboto,sans-serif', MID = N >> 1;
@@ -508,13 +538,16 @@
   function draw() {
     dirty = false; const s = view.s, p = TH.pal, fx = TH.fx, bs = N * s;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const see = SC.on ? Math.max(0, Math.min(.4, S.see / 100)) : 0;
+    if (see) { ctx.clearRect(0, 0, W, W); ctx.globalAlpha = 1 - see; }
     ctx.fillStyle = p.plain; ctx.fillRect(0, 0, W, W);
     if (TH.img.surf && fx.surfaceOpacity > 0) {   // repeating texture on the plain squares
       if (!TH.pat) TH.pat = ctx.createPattern(TH.img.surf, 'repeat');
       const q = (128 / TH.img.surf.width) * (s / fit);
       ctx.save(); ctx.globalAlpha = fx.surfaceOpacity; ctx.translate(view.x, view.y); ctx.scale(q, q); ctx.fillStyle = TH.pat; ctx.fillRect(0, 0, bs / q, bs / q); ctx.restore();
     }
-    if (TH.img.art && fx.boardArtOpacity > 0) { ctx.globalAlpha = fx.boardArtOpacity; ctx.drawImage(TH.img.art, view.x, view.y, bs, bs); ctx.globalAlpha = 1; }
+    if (TH.img.art && fx.boardArtOpacity > 0) { ctx.globalAlpha = fx.boardArtOpacity * (1 - see); ctx.drawImage(TH.img.art, view.x, view.y, bs, bs); }
+    ctx.globalAlpha = 1;
     const c0 = Math.max(0, Math.floor(-view.x / s)), c1 = Math.min(N - 1, Math.floor((W - view.x) / s)), r0 = Math.max(0, Math.floor(-view.y / s)), r1 = Math.min(N - 1, Math.floor((W - view.y) / s));
     ctx.strokeStyle = p.grid; ctx.lineWidth = 1; ctx.beginPath();
     for (let i = c0; i <= c1 + 1; i++) { const x = Math.round(view.x + i * s) + .5; ctx.moveTo(x, 0); ctx.lineTo(x, W); }
@@ -965,6 +998,7 @@
     $('sTheme').value = S.theme; $('sMode').value = S.mode; $('sFirst').value = S.first; $('sLevel').value = S.level; $('sZoom').value = S.zoom;
     $('sRare').checked = S.noRare; $('hBal').checked = S.hBal; $('hDup').checked = S.hDup; $('hHard').checked = S.hHard; $('sBagOn').checked = S.showBag; $('sScr').checked = S.scratch; $('sHap').checked = S.hap;
     $('sLsz').value = S.lsz; $('sPsz').value = S.psz; $('sSym').value = S.sym; $('sSfx').checked = S.sfx; $('sMus').checked = S.music; $('sMot').checked = S.motion;
+    $('sSee').value = S.see; $('vSee').textContent = S.see + '%'; $('lSee').style.display = SC.on ? '' : 'none';
     $('sWl').value = S.wlift; $('vWl').textContent = S.wlift + ' px';
     $('sLift').value = S.lift; $('vLift').textContent = S.lift + ' px'; $('lScr').style.display = C.scratch === false ? 'none' : '';
     open('set');
@@ -978,7 +1012,8 @@
   $('sSym').onchange = e => { S.sym = e.target.value; save(); setTheme(S.theme); };
   $('sSfx').onchange = e => { S.sfx = e.target.checked; save(); if (S.sfx) { audio(); playSnd('drop'); } };
   $('sMus').onchange = e => { S.music = e.target.checked; save(); audio(); if (S.music) setTimeout(startMusic, 60); else stopMusic(); };
-  $('sMot').onchange = e => { S.motion = e.target.checked; save(); particles(); dirty = true; kick(); };
+  $('sMot').onchange = e => { S.motion = e.target.checked; save(); particles(); sceneMotion(); dirty = true; kick(); };
+  $('sSee').oninput = e => { S.see = +e.target.value; S.seeTheme = TH.id; $('vSee').textContent = S.see + '%'; dirty = true; kick(); saveSoon(); };
   $('sLsz').onchange = e => { S.lsz = +e.target.value; applySettings(); save(); };
   $('sPsz').onchange = e => { S.psz = +e.target.value; applySettings(); save(); };
   $('sLift').oninput = e => { S.lift = +e.target.value; $('vLift').textContent = S.lift + ' px'; saveSoon(); };

@@ -4,7 +4,7 @@
 window.CONFIG = {
   id: "masterword",
   name: "Masterword",
-  build: 3,
+  build: 4,
   logo: "logo-masterword.svg",
   rackSize: 7,
   bingo: 50,

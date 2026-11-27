@@ -87,6 +87,7 @@
     "play": "../../art/sounds/play.mp3",
     "bingo": "../../art/sounds/bingo.mp3",
     "computer": "../../art/sounds/computer.mp3",
-    "win": "../../art/sounds/win.mp3"
+    "win": "../../art/sounds/win.mp3",
+    "loop": "../../art/music/calm.mp3"
   }
 }
