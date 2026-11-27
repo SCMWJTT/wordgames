@@ -1,20 +1,20 @@
 {
   "schemaVersion": 1,
   "id": "carnival-board",
-  "name": "Carnival board (picture test)",
+  "name": "Carnival (painted board)",
   "fallback": "classic",
   "assets": {},
   "board": {
     "image": "board.webp",
     "background": "bg.webp",
     "bgSize": [
-      1440,
-      3200
+      688,
+      1536
     ],
     "bgBoard": [
-      100,
-      280,
-      1240
+      86,
+      504,
+      516
     ],
     "grid": 0.35,
     "centreInPicture": true,
@@ -23,7 +23,8 @@
       "#B8862B"
     ],
     "panelAlpha": 0.84,
-    "edge": "#3C1A4C"
+    "edge": "#31193B",
+    "pictureStrength": 0.85
   },
   "modes": {
     "light": {
@@ -76,5 +77,19 @@
         }
       }
     }
+  },
+  "sounds": {
+    "pick": "pick.mp3",
+    "drop": "drop.mp3",
+    "bad": "bad.mp3",
+    "play": "play.mp3",
+    "bingo": "bingo.mp3",
+    "computer": "computer.mp3",
+    "win": "win.mp3",
+    "loop": "../../art/music/calm.mp3"
+  },
+  "sprites": {
+    "burst": "burst.png",
+    "pop": "pop.png"
   }
 }

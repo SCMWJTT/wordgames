@@ -114,3 +114,5 @@ body.btheme #bw{padding:3px;border:0;border-radius:6px;background:linear-gradien
 body.btheme #top,body.btheme #scrBox{background:color-mix(in srgb,var(--panel) var(--pa),transparent);border-color:color-mix(in srgb,var(--panel) 60%,var(--text) 12%);box-shadow:0 2px 10px rgba(0,0,0,.18)}
 body.btheme .row button:not(#bPlay){background:color-mix(in srgb,var(--panel) var(--pa),transparent);border-color:transparent;box-shadow:0 2px 6px rgba(0,0,0,.2)}
 body.btheme #status{background:color-mix(in srgb,var(--panel) 78%,transparent);border-radius:6px;padding:1px 6px}
+#tbg::after{content:"";position:absolute;inset:0;background:var(--panel);opacity:var(--wash,0)}
+body.btheme.dark .row button:not(#bPlay){border:1px solid color-mix(in srgb,var(--text) 22%,transparent)}

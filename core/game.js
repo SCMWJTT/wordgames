@@ -42,6 +42,7 @@
       '<h4>Look</h4><label>Theme<select id="sTheme"></select></label>' +
       '<label>Light or dark<select id="sMode"><option value="system">Same as the phone</option><option value="light">Light</option><option value="dark">Dark</option></select></label>' +
       '<label id="lSee"><span>Board see-through (moving backgrounds): <b id="vSee"></b></span><input type="range" id="sSee" min="0" max="40" step="2"></label>' +
+      '<label id="lPstr"><span>Theme picture strength (painted boards): <b id="vPstr"></b></span><input type="range" id="sPstr" min="30" max="100" step="5"></label>' +
       '<label>Square symbols<select id="sSym"><option value="theme">From the theme</option></select></label>' +
       '<label>Letter size on the tiles<select id="sLsz"><option value="0">Normal</option><option value="1">Large</option><option value="2">Extra large</option><option value="3">Huge</option><option value="4">Biggest</option></select></label>' +
       '<label>Points size on the tiles<select id="sPsz"><option value="0">Normal</option><option value="1">Large</option><option value="2">Extra large</option></select></label>' +
@@ -67,7 +68,7 @@
 
   // ---------- state ----------
   let S = { theme: 'classic', mode: 'system', level: 'hard', first: 'random', lastFirst: 'computer', noRare: true, hBal: true, hDup: true, hHard: true, showBag: true,
-            scratch: true, lift: 48, gs: 125, zoom: 160, hap: true, dir: 'h', lsz: 0, psz: 0, wlift: 24, see: 12, sym: 'theme', sfx: true, music: true, motion: !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) };
+            scratch: true, lift: 48, gs: 125, zoom: 160, hap: true, dir: 'h', lsz: 0, psz: 0, wlift: 24, see: 12, pstr: 0, sym: 'theme', sfx: true, music: true, motion: !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) };
   let G = null, placed = [], sel = null, P = null, D = null, cur = null, bubs = [], hov = null, pickT = null, msg = '', busy = true, HL = null, saveT = 0, SIM = null, lastTT = { t: null, at: 0 }, pickAt = 0;
   const rack = { el: $('rack'), box: $('rackBox'), items: [], n: C.rackSize, sw: 0, off: 0, name: 'rack' };
   const scr  = { el: $('scr'),  box: $('scrBox'),  items: [], n: C.rackSize, sw: 0, off: 0, name: 'scratch row' };
@@ -518,8 +519,10 @@
     st.setProperty('--fr1', (bt.frame || [])[0] || '#d9b36c'); st.setProperty('--fr2', (bt.frame || [])[1] || '#9c7a3c');
     st.setProperty('--pa', Math.round((bt.panelAlpha == null ? .85 : bt.panelAlpha) * 100) + '%');
     const t = $('tbg'); t.style.backgroundColor = bt.edge || ''; t.style.backgroundImage = bt.background ? 'url("' + bt.dir + bt.background + '")' : 'none';
-    requestAnimationFrame(placeBg);
+    toneBg(); requestAnimationFrame(placeBg);
   }
+  function pStr() { const bt = TH.bt; if (!bt) return 1; return S.pstr ? S.pstr / 100 : (bt.pictureStrength == null ? 1 : bt.pictureStrength); }
+  function toneBg() { document.body.style.setProperty('--wash', ((1 - pStr()) * .9).toFixed(3)); }   // a soft wash over the background, the same amount the board is toned down
   function placeBg() {   // scales and shifts the background so its board area sits exactly behind the board on this screen
     const bt = TH.bt; if (!bt || !bt.background) return;
     const r = cv.getBoundingClientRect(), [bx, by, bsz] = bt.bgBoard, [bw, bh] = bt.bgSize, k = r.width / bsz, t = $('tbg').style;
@@ -570,7 +573,7 @@
   function draw() {
     dirty = false; const s = view.s, p = TH.pal, fx = TH.fx, bs = N * s;
     const see = SC.on ? Math.max(0, Math.min(.4, S.see / 100)) : 0;
-    const key = [view.s, view.x, view.y, W, dpr, see, TH.id, TH.mode, S.sym, !!TH.img.art, !!TH.img.surf, TH.ver].join('|');
+    const key = [view.s, view.x, view.y, W, dpr, see, pStr(), TH.id, TH.mode, S.sym, !!TH.img.art, !!TH.img.surf, TH.ver].join('|');
     if (key !== baseKey) {   // only when zoom, pan, size or theme changed; a drag reuses the cached picture
       baseKey = key; if (base.width !== cv.width) { base.width = cv.width; base.height = cv.height; }
       ctx = bctx; ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, base.width, base.height); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -582,7 +585,7 @@
   }
   function drawBase(s, p, fx, bs, see) {
     if (see) { ctx.clearRect(0, 0, W, W); ctx.globalAlpha = 1 - see; }
-    if (TH.bt) { ctx.fillStyle = p.plain; ctx.fillRect(0, 0, W, W); ctx.drawImage(TH.bt.img, view.x, view.y, bs, bs); }
+    if (TH.bt) { ctx.fillStyle = p.plain; ctx.fillRect(0, 0, W, W); ctx.globalAlpha = (1 - see) * pStr(); ctx.drawImage(TH.bt.img, view.x, view.y, bs, bs); ctx.globalAlpha = see ? 1 - see : 1; }
     else { ctx.fillStyle = p.plain; ctx.fillRect(0, 0, W, W); }
     if (!TH.bt && TH.img.surf && fx.surfaceOpacity > 0) {   // repeating texture on the plain squares
       if (!TH.pat) TH.pat = ctx.createPattern(TH.img.surf, 'repeat');
@@ -1048,6 +1051,7 @@
     $('sTheme').value = S.theme; $('sMode').value = S.mode; $('sFirst').value = S.first; $('sLevel').value = S.level; $('sZoom').value = S.zoom;
     $('sRare').checked = S.noRare; $('hBal').checked = S.hBal; $('hDup').checked = S.hDup; $('hHard').checked = S.hHard; $('sBagOn').checked = S.showBag; $('sScr').checked = S.scratch; $('sHap').checked = S.hap;
     $('sLsz').value = S.lsz; $('sPsz').value = S.psz; $('sSym').value = S.sym; $('sSfx').checked = S.sfx; $('sMus').checked = S.music; $('sMot').checked = S.motion;
+    $('sPstr').value = Math.round(pStr() * 100); $('vPstr').textContent = Math.round(pStr() * 100) + '%'; $('lPstr').style.display = TH.bt ? '' : 'none';
     $('sSee').value = S.see; $('vSee').textContent = S.see + '%'; $('lSee').style.display = SC.on ? '' : 'none';
     $('sWl').value = S.wlift; $('vWl').textContent = S.wlift + ' px';
     $('sLift').value = S.lift; $('vLift').textContent = S.lift + ' px'; $('lScr').style.display = C.scratch === false ? 'none' : '';
@@ -1063,6 +1067,7 @@
   $('sSfx').onchange = e => { S.sfx = e.target.checked; save(); if (S.sfx) { audio(); playSnd('drop'); } };
   $('sMus').onchange = e => { S.music = e.target.checked; save(); audio(); if (S.music) setTimeout(startMusic, 60); else stopMusic(); };
   $('sMot').onchange = e => { S.motion = e.target.checked; save(); particles(); sceneMotion(); dirty = true; kick(); };
+  $('sPstr').oninput = e => { S.pstr = +e.target.value; $('vPstr').textContent = S.pstr + '%'; toneBg(); dirty = true; kick(); saveSoon(); };
   $('sSee').oninput = e => { S.see = +e.target.value; S.seeTheme = TH.id; $('vSee').textContent = S.see + '%'; dirty = true; kick(); saveSoon(); };
   $('sLsz').onchange = e => { S.lsz = +e.target.value; applySettings(); save(); };
   $('sPsz').onchange = e => { S.psz = +e.target.value; applySettings(); save(); };
