@@ -3,51 +3,45 @@
   "id": "carnival",
   "name": "Carnival",
   "fallback": "classic",
-  "icon": "icon.png",
-  "assets": {
-    "tw": "tw.svg",
-    "dw": "dw.svg",
-    "tl": "tl.svg",
-    "dl": "dl.svg",
-    "st": "st.png",
-    "boardArt": "board-art.png",
-    "surface": "surface.webp"
-  },
-  "sounds": {
-    "pick": "pick.mp3",
-    "drop": "drop.mp3",
-    "bad": "bad.mp3",
-    "play": "play.mp3",
-    "bingo": "bingo.mp3",
-    "computer": "computer.mp3",
-    "win": "win.mp3"
-  },
-  "sprites": {
-    "particle": "particle.png",
-    "burst": "burst.png",
-    "pop": "pop.png",
-    "stAnim": "st-anim.png"
-  },
-  "layout": {
-    "centerScale": 1.8,
-    "premiumIconScale": 0.8
+  "assets": {},
+  "board": {
+    "image": "board.webp",
+    "background": "bg.webp",
+    "bgSize": [
+      688,
+      1536
+    ],
+    "bgBoard": [
+      65,
+      318,
+      559
+    ],
+    "grid": 0.35,
+    "centreInPicture": false,
+    "frame": [
+      "#F2C14E",
+      "#B8862B"
+    ],
+    "panelAlpha": 0.86,
+    "edge": "#31193B",
+    "pictureStrength": 0.9
   },
   "modes": {
     "light": {
       "palette": {
-        "page": "#FFF1DA",
-        "panel": "#FFFFFF",
-        "text": "#292015",
-        "muted": "#655B50",
-        "plain": "#FFF3D6",
-        "grid": "#E6CF9A",
+        "page": "#31193B",
+        "panel": "#FFF6EC",
+        "text": "#3A1E3A",
+        "muted": "#7F6A78",
+        "plain": "#6D3D2F",
+        "grid": "#B88A86",
         "tw": "#E23A4E",
         "dw": "#F27DB2",
         "tl": "#1F6FD6",
-        "dl": "#6CC4EE",
+        "dl": "#4FB3E6",
         "st": "#F27DB2",
         "accent": "#F6B93F",
-        "icon": "#292015",
+        "icon": "#3A1E3A",
         "tileInk": "#292015",
         "premiumInk": {
           "tw": "#FFFFFF",
@@ -56,31 +50,23 @@
           "dl": "#FFFFFF",
           "st": "#FFFFFF"
         }
-      },
-      "assets": {
-        "wallpaper": "bg.webp"
-      },
-      "effects": {
-        "boardArtOpacity": 0.14,
-        "surfaceOpacity": 0.5,
-        "wallpaperOpacity": 1
       }
     },
     "dark": {
       "palette": {
-        "page": "#1B0F26",
-        "panel": "#30253A",
-        "text": "#F3ECE3",
-        "muted": "#C9BDB0",
-        "plain": "#33204A",
-        "grid": "#51366E",
-        "tw": "#D5364A",
-        "dw": "#C04E8E",
-        "tl": "#2D78DC",
-        "dl": "#3A8FBF",
-        "st": "#C04E8E",
+        "page": "#31193B",
+        "panel": "#2E1838",
+        "text": "#F7E9F2",
+        "muted": "#B1A0B1",
+        "plain": "#6D3D2F",
+        "grid": "#B88A86",
+        "tw": "#E23A4E",
+        "dw": "#F27DB2",
+        "tl": "#1F6FD6",
+        "dl": "#4FB3E6",
+        "st": "#F27DB2",
         "accent": "#F6B93F",
-        "icon": "#F3ECE3",
+        "icon": "#F7E9F2",
         "tileInk": "#292015",
         "premiumInk": {
           "tw": "#FFFFFF",
@@ -89,14 +75,6 @@
           "dl": "#FFFFFF",
           "st": "#FFFFFF"
         }
-      },
-      "assets": {
-        "wallpaper": "bg-dark.webp"
-      },
-      "effects": {
-        "boardArtOpacity": 0.12,
-        "surfaceOpacity": 0.5,
-        "wallpaperOpacity": 1
       }
     }
   }

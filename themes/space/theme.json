@@ -3,51 +3,45 @@
   "id": "space",
   "name": "Space",
   "fallback": "classic",
-  "icon": "icon.png",
-  "assets": {
-    "tw": "tw.svg",
-    "dw": "dw.svg",
-    "tl": "tl.svg",
-    "dl": "dl.svg",
-    "st": "st.png",
-    "boardArt": "board-art.png",
-    "surface": "surface.webp"
-  },
-  "sounds": {
-    "pick": "pick.mp3",
-    "drop": "drop.mp3",
-    "bad": "bad.mp3",
-    "play": "play.mp3",
-    "bingo": "bingo.mp3",
-    "computer": "computer.mp3",
-    "win": "win.mp3"
-  },
-  "sprites": {
-    "particle": "particle.png",
-    "burst": "burst.png",
-    "pop": "pop.png",
-    "stAnim": "st-anim.png"
-  },
-  "layout": {
-    "centerScale": 1.8,
-    "premiumIconScale": 0.8
+  "assets": {},
+  "board": {
+    "image": "board.webp",
+    "background": "bg.webp",
+    "bgSize": [
+      688,
+      1536
+    ],
+    "bgBoard": [
+      70,
+      484,
+      548
+    ],
+    "grid": 0.35,
+    "centreInPicture": false,
+    "frame": [
+      "#8A6FD6",
+      "#4B3A8C"
+    ],
+    "panelAlpha": 0.86,
+    "edge": "#0C0D14",
+    "pictureStrength": 0.9
   },
   "modes": {
     "light": {
       "palette": {
-        "page": "#F1EEFF",
-        "panel": "#FFFFFF",
-        "text": "#292015",
-        "muted": "#655B50",
-        "plain": "#F6F1E8",
-        "grid": "#C8BFD9",
-        "tw": "#E23A4E",
-        "dw": "#F27DB2",
-        "tl": "#1F6FD6",
-        "dl": "#6CC4EE",
-        "st": "#F27DB2",
+        "page": "#0C0D14",
+        "panel": "#E6EAF5",
+        "text": "#1F1F29",
+        "muted": "#656670",
+        "plain": "#B2BAD8",
+        "grid": "#545C70",
+        "tw": "#D93D52",
+        "dw": "#E673A2",
+        "tl": "#2B65D9",
+        "dl": "#4FA6E6",
+        "st": "#E673A2",
         "accent": "#F6B93F",
-        "icon": "#292015",
+        "icon": "#1F1F29",
         "tileInk": "#292015",
         "premiumInk": {
           "tw": "#FFFFFF",
@@ -56,31 +50,23 @@
           "dl": "#FFFFFF",
           "st": "#FFFFFF"
         }
-      },
-      "assets": {
-        "wallpaper": "bg.webp"
-      },
-      "effects": {
-        "boardArtOpacity": 0.14,
-        "surfaceOpacity": 0.5,
-        "wallpaperOpacity": 1
       }
     },
     "dark": {
       "palette": {
-        "page": "#0C102A",
-        "panel": "#22263D",
-        "text": "#F3ECE3",
-        "muted": "#C9BDB0",
-        "plain": "#F3E8D6",
-        "grid": "#B5A5C6",
-        "tw": "#D5364A",
-        "dw": "#C04E8E",
-        "tl": "#2D78DC",
-        "dl": "#3A8FBF",
-        "st": "#C04E8E",
+        "page": "#0C0D14",
+        "panel": "#1A1C29",
+        "text": "#E6EAF5",
+        "muted": "#9FA2AE",
+        "plain": "#B2BAD8",
+        "grid": "#545C70",
+        "tw": "#D93D52",
+        "dw": "#E673A2",
+        "tl": "#2B65D9",
+        "dl": "#4FA6E6",
+        "st": "#E673A2",
         "accent": "#F6B93F",
-        "icon": "#F3ECE3",
+        "icon": "#E6EAF5",
         "tileInk": "#292015",
         "premiumInk": {
           "tw": "#FFFFFF",
@@ -89,14 +75,6 @@
           "dl": "#FFFFFF",
           "st": "#FFFFFF"
         }
-      },
-      "assets": {
-        "wallpaper": "bg-dark.webp"
-      },
-      "effects": {
-        "boardArtOpacity": 0.12,
-        "surfaceOpacity": 0.5,
-        "wallpaperOpacity": 1
       }
     }
   }

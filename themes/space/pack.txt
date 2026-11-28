@@ -1,11 +1,9 @@
 name: Space
-particle frames: 6
-burst frames: 10
-pop frames: 6
-st-anim frames: 8
-loop credit: original (no loop included)
-frame: omitted (clean modern board)
-light colours: page #F1EEFF, board #F6F1E8, grid #C8BFD9, TW #E23A4E, DW #F27DB2, TL #1F6FD6, DL #6CC4EE
-dark colours: page #0C102A, board #F3E8D6, grid #B5A5C6, TW #D5364A, DW #C04E8E, TL #2D78DC, DL #3A8FBF
-art notes: Center piece is st.png (transparent overlay, not baked into wallpaper). Premium square icons are tw.svg, dw.svg, tl.svg, dl.svg (white silhouettes; game paints square colors). bg.webp/bg-dark.webp are app wallpaper. board-art.png is faint board overlay. surface.webp is optional seamless surface.
-prototype audio: Original synthesized effects included; final sound design may replace them.
+edge colour: #0C0D14
+frame colours: #8A6FD6 #4B3A8C
+panel light: #E6EAF5
+panel dark: #1A1C29
+text light: #1F1F29
+text dark: #E6EAF5
+grid: #545C70
+squares: TW #D93D52, DW #E673A2, TL #2B65D9, DL #4FA6E6

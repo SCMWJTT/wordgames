@@ -4,18 +4,6 @@
     "name": "Classic"
   },
   {
-    "id": "carnival-board",
-    "name": "Carnival (painted board)"
-  },
-  {
-    "id": "dusk",
-    "name": "Dusk waters (moving video test)"
-  },
-  {
-    "id": "leaves",
-    "name": "Falling leaves (moving layers test)"
-  },
-  {
     "id": "carnival",
     "name": "Carnival"
   },
@@ -24,20 +12,12 @@
     "name": "Christmas"
   },
   {
-    "id": "tropical",
-    "name": "Tropical"
-  },
-  {
     "id": "ocean",
     "name": "Ocean"
   },
   {
     "id": "autumn",
     "name": "Autumn"
-  },
-  {
-    "id": "football",
-    "name": "Football"
   },
   {
     "id": "space",
