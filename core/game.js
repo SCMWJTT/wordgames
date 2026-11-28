@@ -528,12 +528,14 @@
     const r = cv.getBoundingClientRect(), [bx, by, bsz] = bt.bgBoard, [bw, bh] = bt.bgSize, k = r.width / bsz, t = $('tbg').style;
     t.backgroundSize = (bw * k) + 'px ' + (bh * k) + 'px'; t.backgroundPosition = (r.left - bx * k) + 'px ' + (r.top - by * k) + 'px';
   }
-  function paintedSquare(x, y, s, col) {   // a raised, slightly glossy square: lighter top, darker edge
-    const m = Math.max(1.2, s * .05), w = s - 2 * m, rad = Math.min(5, s * .16);
-    ctx.fillStyle = 'rgba(0,0,0,.18)'; rr(x + m, y + m + s * .03, w, w, rad); ctx.fill();
-    const g = ctx.createLinearGradient(0, y + m, 0, y + m + w); g.addColorStop(0, shade(col, .22)); g.addColorStop(.55, col); g.addColorStop(1, shade(col, -.18));
-    ctx.fillStyle = g; rr(x + m, y + m, w, w, rad); ctx.fill();
-    ctx.strokeStyle = 'rgba(255,255,255,.45)'; ctx.lineWidth = Math.max(1, s * .04); rr(x + m + s * .04, y + m + s * .04, w - s * .08, w - s * .08, rad * .7); ctx.stroke();
+  function paintedSquare(x, y, s, col) {   // a raised square: soft shadow on the board, a darker side edge, a glossy top face
+    const m = Math.max(1.2, s * .06), w = s - 2 * m, rad = Math.min(6, s * .17), lip = Math.max(1.5, s * .07);
+    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.38)'; ctx.shadowBlur = Math.max(2, s * .2); ctx.shadowOffsetY = Math.max(1, s * .07);
+    ctx.fillStyle = shade(col, -.38); rr(x + m, y + m, w, w, rad); ctx.fill(); ctx.restore();   // side edge, with the shadow under it
+    const g = ctx.createLinearGradient(0, y + m, 0, y + m + w - lip); g.addColorStop(0, shade(col, .28)); g.addColorStop(.5, col); g.addColorStop(1, shade(col, -.12));
+    ctx.fillStyle = g; rr(x + m, y + m, w, w - lip, rad); ctx.fill();   // top face
+    ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = Math.max(1, s * .035);
+    ctx.beginPath(); ctx.moveTo(x + m + rad, y + m + ctx.lineWidth); ctx.lineTo(x + m + w - rad, y + m + ctx.lineWidth); ctx.stroke();   // light catching the top edge
   }
   const shadeC = {};
   function shade(h, a) {   // lighten (a > 0) or darken (a < 0) a colour
@@ -607,8 +609,8 @@
       if (k === 'st' && TH.bt && TH.bt.centreInPicture) continue;   // the picture's centre artwork is the centre square
       if (TH.bt) paintedSquare(x, y, s, p[k]); else { ctx.fillStyle = p[k]; rr(x + 1.5, y + 1.5, s - 2, s - 2, Math.min(4, s * .12)); ctx.fill(); }
       if (k === 'st' && TH.orn) continue;
-      const im = tinted(k);
-      if (im) ctx.drawImage(im, cx - isz / 2, cy - isz / 2, isz, isz);
+      const im = tinted(k), oy = TH.bt ? s * .035 : 0;
+      if (im) ctx.drawImage(im, cx - isz / 2, cy - isz / 2 - oy, isz, isz);
       else {   // no icon file: simple built-in shapes
         const q = s * .16; ctx.fillStyle = p.premiumInk[k] || '#fff'; ctx.beginPath();
         if (k === 'tw' || k === 'tl') { ctx.moveTo(cx, cy - q); ctx.lineTo(cx + q, cy); ctx.lineTo(cx, cy + q); ctx.lineTo(cx - q, cy); }

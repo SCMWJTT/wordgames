@@ -17,7 +17,7 @@
       516
     ],
     "grid": 0.35,
-    "centreInPicture": true,
+    "centreInPicture": false,
     "frame": [
       "#F2C14E",
       "#B8862B"
